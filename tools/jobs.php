@@ -157,6 +157,7 @@ switch ($action) {
 			foreach ($jobs as $job) {
 				$collection = $job->getCollection();
 				switch ($job->task) {
+					case OpenSKOS_Db_Table_Row_Job::JOB_TASK_IMPORT_ISOCAT: //fall through to JOB_TASK_IMPORT..
 					case OpenSKOS_Db_Table_Row_Job::JOB_TASK_IMPORT:						
 						$job->start()->save();
 						
@@ -233,9 +234,38 @@ switch ($action) {
 							$parserOpts->setArguments(array_merge($arguments, array($filePath))); // The last argument must be the file path.
 							try {
 								$parser = OpenSKOS_Rdf_Parser::factory($parserOpts);
-								$parser->process($job['user']);
-								$duplicateConceptSchemes = array_merge($duplicateConceptSchemes, $parser->getDuplicateConceptSchemes());
-								$notImportedNotations = array_merge($notImportedNotations, $parser->getNotImportedNotations());
+								if ($job->task == OpenSKOS_Db_Table_Row_Job::JOB_TASK_IMPORT) {
+									$parser->process($job['user']);
+									$duplicateConceptSchemes = array_merge($duplicateConceptSchemes, $parser->getDuplicateConceptSchemes());
+									$notImportedNotations = array_merge($notImportedNotations, $parser->getNotImportedNotations());
+								}
+								else if ($job->task == OpenSKOS_Db_Table_Row_Job::JOB_TASK_IMPORT_ISOCAT) {
+									$importCount = 0;
+									try {
+										$importCount = $parser->processISOCatExportFile($job['user']);
+									}
+									catch(Exception $ex) {
+										// @Martin Snijders: Db could have timed out. This seems to be neccesary ?
+										$model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
+										$job = $model->find($job->id)->current(); // Gets new DB object to prevent connection time out.
+										$info = "Job (id : " . $job->id . ") and of type " . $job->task . " was canceled because of following error : " . $ex->getMessage();
+										$job->setInfo($info);										
+										fwrite(STDERR, $job->id.': '.$ex->getMessage()."\n");
+										$job->error($info)->finish()->save();
+										exit($ex->getCode());
+									}
+									// @Martin Snijders: Db could have timed out. This seems to be neccesary ?
+									$model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
+									$job = $model->find($job->id)->current(); // Gets new DB object to prevent connection time out.
+									$job->setInfo("Job (id : " . $job->id . ") and of type " . $job->task . " finished succesfuly and imported " . $importCount . " documents");							
+									$job->finish()->save();
+								}
+								else {									
+									$info = "Error: import Job (id : " . $job->id . ") and of type " . $job->task . " was aborted, import type unknown : " . $job->task;
+									$job->setInfo($info);
+									$job->error($info)->finish()->save();
+									break;
+								}
 							} catch (Exception $e) {
 								$model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
 								$job = $model->find($job->id)->current(); // Gets new DB object to prevent connection time out.
@@ -256,6 +286,10 @@ switch ($action) {
 						
 						// Clears the schemes cache after import.
 						OpenSKOS_Cache::getCache()->remove(Editor_Models_ApiClient::CONCEPT_SCHEMES_CACHE_KEY);
+						
+						// @Martin Snijders, for symetry sake, also clear SKOSCollection cache..
+						// Clears the schemes cache after import.
+						OpenSKOS_Cache::getCache()->remove(Editor_Models_ApiClient::SKOS_COLLECTIONS_CACHE_KEY);
 						
 						$model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
 						$job = $model->find($job->id)->current(); // Gets new DB object to prevent connection time out.
@@ -339,6 +373,32 @@ switch ($action) {
 							$model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
 							$job = $model->find($job->id)->current(); // Gets new DB object to prevent connection time out.
 					
+							fwrite(STDERR, $job->id.': '.$e->getMessage()."\n");
+							$job->error($e->getMessage())->finish()->save();
+						}
+						break;
+					case OpenSKOS_Db_Table_Row_Job::JOB_TASK_DELETE_SKOS_COLLECTION:
+						$job->start()->save();
+					
+						try {
+							$response = Api_Models_Concepts::factory()->getConcepts('uuid:' . $job->getParam('uuid'));
+							if ( ! isset($response['response']['docs']) || (1 !== count($response['response']['docs']))) {
+								throw new Zend_Exception('The requested skos collection was not found');
+							}
+							$skosCollection = new Editor_Models_SkosCollection(new Api_Models_Concept(array_shift($response['response']['docs'])));
+							$skosCollection->delete(true, $job['user']);
+								
+							// Clears the schemes cache after the skos collection is removed.
+							OpenSKOS_Cache::getCache()->remove(Editor_Models_ApiClient::SKOS_COLLECTIONS_CACHE_KEY);
+								
+							$model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
+							$job = $model->find($job->id)->current(); // Gets new DB object to prevent connection time out.
+								
+							$job->finish()->save();
+						} catch (Zend_Exception $e) {
+							$model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
+							$job = $model->find($job->id)->current(); // Gets new DB object to prevent connection time out.
+								
 							fwrite(STDERR, $job->id.': '.$e->getMessage()."\n");
 							$job->error($e->getMessage())->finish()->save();
 						}

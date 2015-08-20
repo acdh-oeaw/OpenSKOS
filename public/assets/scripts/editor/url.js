@@ -53,6 +53,11 @@ EditorUrl = new Class({
 		if (this._params.addConceptScheme !== undefined && this._params.addConceptScheme) {
 			Editor.Control.addConceptScheme();
 		}
+		
+		// Skos Collection
+		if (this._params.addSkosCollection !== undefined && this._params.addSkosCollection) {
+			Editor.Control.addSkosCollection();
+		}
 	},
 	setParam: function (name, value) {
 		

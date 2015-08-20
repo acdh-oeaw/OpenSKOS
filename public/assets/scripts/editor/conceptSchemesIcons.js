@@ -64,7 +64,7 @@ var EditorConceptSchemesIcons = new Class({
 	},
 	assignIcon: function (schemeUuid, iconFile) {
 		new Request.JSON({
-			url: BASE_URL + "/editor/concept-scheme/assign-icon", 
+			url: BASE_URL + "/editor/skos-scheme/assign-icon", 
 			method: 'post',
 			data: {schemeUuid: schemeUuid, iconFile: iconFile},
 			onSuccess: function(result, text) {

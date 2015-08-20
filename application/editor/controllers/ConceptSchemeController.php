@@ -104,16 +104,23 @@ class Editor_ConceptSchemeController extends OpenSKOS_Controller_Editor
 			
 			$conceptScheme = $this->_getConceptScheme();
 			
+			$createNew;
 			if (null === $conceptScheme) {
 				$this->_requireAccess('editor.concept-schemes', 'create', self::RESPONSE_TYPE_PARTIAL_HTML);
 				$conceptScheme = new Editor_Models_ConceptScheme(new Api_Models_Concept());
+				$createNew = true;
 			} else {
 				$this->_requireAccess('editor.concept-schemes', 'edit', self::RESPONSE_TYPE_PARTIAL_HTML);
+				$createNew = false;
 			}
 			
+			$extraData = array();			
 			$oldData = $conceptScheme->getData();
+                        //by reference
 			$extraData = $conceptScheme->transformFormData($formData);
-			$conceptScheme->setConceptData($formData, $extraData);
+                        //by reference
+                        $conceptScheme->setEPICHandle($extraData);
+			$conceptScheme->setConceptData($formData,$extraData);
 			
 			try {
 				$user = OpenSKOS_Db_Table_Users::fromIdentity();
@@ -133,7 +140,7 @@ class Editor_ConceptSchemeController extends OpenSKOS_Controller_Editor
 					$extraData['created_timestamp'] = $oldData['created_timestamp'];
 				}
 				
-				$conceptScheme->save($extraData);
+				$conceptScheme->save($extraData, null, $createNew);
 				
 				// Clears the schemes cache after a new scheme is added.
 				OpenSKOS_Cache::getCache()->remove(Editor_Models_ApiClient::CONCEPT_SCHEMES_CACHE_KEY);

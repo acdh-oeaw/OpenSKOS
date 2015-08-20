@@ -20,6 +20,7 @@
  */
 
 require_once 'FindConceptsController.php';
+require_once dirname(__DIR__) . '../../../library/EPIC/EPICHandleProxy.php';
 
 class Api_ConceptController extends Api_FindConceptsController {
 
@@ -106,6 +107,37 @@ class Api_ConceptController extends Api_FindConceptsController {
 			if ($concept) {
 				throw new Zend_Controller_Action_Exception('Concept `'.$solrDocument['uri'][0].'` already exists', 409);
 			}
+		}
+		
+		// @Martin Snijders
+		// Why doesnt this functionality call Api_Models_Concept->save(..) ?
+		// It commits to solr irself, so I have to perform PID actions here also now...
+		// If new concept than register a PID...
+		if (null == $concept) {
+                    if (EPICHandleProxy::enabled()) {
+			$handleServerClient = EPICHandleProxy::getInstance();
+                        $prefix = $handleServerClient->getPID("");
+                        $uri    = current($solrDocument->offsetGet("uri"));
+                        // only create a handle if the uri starts with the handle prefix
+                        if (false !== strncmp($uri,$prefix,strlen($prefix))) {
+                            // get the uuid from the uri by skipping over the prefix
+                            $uuid = substr($uri,strlen($prefix));
+                            $lcl  = $handleServerClient->getForwardLocationPrefix().$uuid;
+                            // re-set uuid with uri-based uuid
+                            $solrDocument->offsetUnset("uuid");
+                            $solrDocument->uuid = $uuid;
+                            try {
+                                    // create or update the PID
+                                    $handleServerClient->createNewHandleWithGUID($lcl,$uuid);
+                                    // set the uri accordingly...
+                                    $solrDocument->offsetUnset("uri");
+                                    $solrDocument->uri = $uri;
+                            }
+                            catch(Exception $ex) {
+                                    throw new Zend_Controller_Action_Exception('Failed to create a PID for the new Concept `'.$solrDocument['uri'][0].'`: '.$e->getMessage(), 400);
+                            }
+                        }
+                    }
 		}
 		
 		try {

@@ -22,7 +22,7 @@ var EditorControl = new Class({
 	Binds: ['clearHistory', 
 	        'loadHistory',
 	        'loadConcept'],
-    loadedConcept: '',
+        loadedConcept: '',
 	loadingTimeoutHandle: null,
 	_statusSuccess: 'ok',
 	initialize: function () {
@@ -103,6 +103,7 @@ var EditorControl = new Class({
 				self.loadHistory($('history-list'), uuid);
 				
 				new TabPane('concept-language-tab-container', {}, false);
+				new TabPane('concept-skosCollection-tab-container', {}, false);
 				new TabPane('concept-scheme-tab-container', {}, false);
 				
 				self.loadedConcept = uuid;
@@ -157,6 +158,7 @@ var EditorControl = new Class({
 				} else {
 					Editor.Control.loadHistory($('history-list'), $('concept-view').getElement('#uuid').get('value'));
 					new TabPane('concept-language-tab-container', {}, false);
+					new TabPane('concept-skosCollection-tab-container', {}, false);
 					new TabPane('concept-scheme-tab-container', {}, false);
 					Editor.Relations.disableRelationLinks();
 				}
@@ -210,6 +212,37 @@ var EditorControl = new Class({
 			}
 		});
 		$('Editconceptscheme').send();
+		
+		// Show loading
+		$('central-content').empty();
+		$('central-content').adopt(new Element('div').addClass('loading').set('text', 'Loading...'));
+	},
+	addSkosCollection: function ()  {
+		new Request.HTML({
+			url: BASE_URL + '/editor/skos-collection/create/',
+			onSuccess: function(responseTree, responseElements, responseHTML, responseJavaScript){
+					$('central-content').empty();
+					$('central-content').set('html', responseHTML);
+					Editor.SkosCollection.initSkosCollectionForm();
+				}
+		}).get();
+	},
+	saveSkosCollection: function () {
+		$('Editskoscollection').set('send', {
+			onComplete: function (responseHTML) {
+				$('central-content').empty();
+				$('central-content').set('html', responseHTML);
+				
+				if (null !== $('Editskoscollection')) {
+					// There are errors.
+					Editor.SkosCollection.initSkosCollectionForm();
+				} else {
+					// The save is successfull.
+					window.location.href = BASE_URL + '/editor/skos-collection/index/';
+				}
+			}
+		});
+		$('Editskoscollection').send();
 		
 		// Show loading
 		$('central-content').empty();

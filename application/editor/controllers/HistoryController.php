@@ -8,7 +8,9 @@ class Editor_HistoryController extends OpenSKOS_Controller_Editor
 		$data = array();
 		foreach ($history as $concept) {
 			$data[] = $concept->toArray(array('uuid', 'uri', 'status', 'schemes', 'previewLabel', 'previewScopeNote'));
+// TODO martin moet hier ook nog gekeken worden naar de inSkosCollection relatie ?
 		}
+		
 		if (!empty($data)) {  
 		$this->getHelper('json')->sendJson(array(
 				'status' => 'ok',

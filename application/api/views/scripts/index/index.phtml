@@ -139,6 +139,22 @@ You can do this by querying the find API with the selected label, for example if
 		</ul>
 	</li>
 	<li>
+		<p>Fetch a single Skos Collection:</p>
+		<ul>
+			<li>by URI: <a href="<?php echo $this->url(array('controller' => 'open-skos-collection'), 'rest')?>?id=<?php echo $exampleURI?>"><?php echo $this->url(array('controller' => 'open-skos-collection'), 'rest')?>?id=<?php echo $exampleURI?></a></li>
+			<li>by UUID: <a href="<?php echo $this->url(array('controller' => 'open-skos-collection', 'id' => $exampleUUID), 'rest')?>"><?php echo $this->url(array('controller' => 'open-skos-collection', 'id' => $exampleUUID), 'rest')?></a></li>
+			<li>by UUID in XML-RDF format: <a href="<?php echo $this->url(array('controller' => 'open-skos-collection', 'id' => $exampleUUID), 'rest')?>.rdf"><?php echo $this->url(array('controller' => 'open-skos-collection', 'id' => $exampleUUID), 'rest')?>.rdf</a></li>
+		</ul>
+	</li>
+	<li>
+		<p>Fetch all concepts in a Skos Collection:</p>
+		<ul>
+			<li>by URI: <a href="<?php echo $this->url(array('controller' => 'open-skos-collection'), 'rest')?>?q=<?php echo $exampleURI?>"><?php echo $this->url(array('controller' => 'open-skos-collection'), 'rest')?>?q=<?php echo $exampleURI?></a></li>
+			<li>by UUID: <a href="<?php echo $this->url(array('controller' => 'open-skos-collection'), 'rest')?>?q=<?php echo $exampleUUID?>"><?php echo $this->url(array('controller' => 'open-skos-collection'), 'rest')?>?q=<?php echo $exampleUUID?></a></li>
+			<li>by UUID in XML-RDF format: <a href="<?php echo $this->url(array('controller' => 'open-skos-collection'), 'rest')?>?q=<?php echo $exampleUUID?>.rdf"><?php echo $this->url(array('controller' => 'open-skos-collection'), 'rest')?>?q=<?php echo $exampleUUID?>.rdf</a></li>
+		</ul>
+	</li>
+	<li>
 		<p>Advanced queries:</p>
 		<ul>
 			<li>

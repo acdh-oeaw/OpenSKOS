@@ -1,0 +1,44 @@
+<?php 
+/**
+ * OpenSKOS
+ *
+ * LICENSE
+ *
+ * This source file is subject to the GPLv3 license that is bundled
+ * with this package in the file LICENSE.txt.
+ * It is also available through the world-wide-web at this URL:
+ * http://www.gnu.org/licenses/gpl-3.0.txt
+ * If you did not receive a copy of the license and are unable to
+ * obtain it through the world-wide-web, please send an email
+ * to license@zend.com so we can send you a copy immediately.
+ *
+ * @category   OpenSKOS
+ * @package    OpenSKOS
+ * @copyright  Copyright (c) 2014 Meertens Instituut. (http://www.meertens.knaw.nl)
+ * @author     Matthijs Brouwer
+ * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
+ */
+?>
+<?php $this->headTitle($this->translate('Shibboleth Access for OpenSKOS Editor'))?>
+
+<p>
+  Missing or invalid shibboleth configuration:
+</p>
+
+<ul>
+<li>
+Add to http configuration
+<pre>
+&lt;location /editor/login/shibboleth-login&gt;
+  AuthType shibboleth
+  ShibRequireSession On
+  Require valid-user
+&lt;/location&gt;
+</pre>
+</li>
+<li>
+Enable shibboleth in application.ini
+</li>
+</ul>
+
+<p>Use <a href="<?php echo $this->url(array('controller' => 'login', 'action' => ''));?>">login</a> to get access

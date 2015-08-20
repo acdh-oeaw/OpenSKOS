@@ -21,6 +21,8 @@
 
 require_once dirname(__FILE__) . '/Parser/Exception.php';
 
+require_once dirname(__DIR__) . '../../EPIC/EPICHandleProxy.php';
+
 class OpenSKOS_Rdf_Parser implements Countable
 {
 	public static $get_opts = array(
@@ -280,7 +282,9 @@ class OpenSKOS_Rdf_Parser implements Countable
 				return;
 			}
 			$className = parse_url($resource, PHP_URL_FRAGMENT);
-			$document->class = parse_url($type->getAttributeNS(self::$namespaces['rdf'], 'resource'), PHP_URL_FRAGMENT);
+                        // SKOS Collections are internally known as SKOSCollection
+                        $cn = preg_replace("/Collection/","SKOSCollection",$className);
+			$document->class = $cn;
 		} else {
 			throw new OpenSKOS_Rdf_Parser_Exception('missing required attribute rdf:type');
 		    return;
@@ -336,29 +340,6 @@ class OpenSKOS_Rdf_Parser implements Countable
 			);
 			$document->$fieldname = trim($element->nodeValue);
 		}
-		
-		//infer dcterms:title from skos:prefLabel if not already present, using the first
-		// prefLabel found matching one of the following criteria, checked in this order:
-		// 1. with xml:lang=XY where XY is lang option (if set)
-		// 2. without an xml:lang attribute
-		// 3. any prefLabel
-		if (!isset($document->dcterms_title)) {
-			$prefLabelXpathQueries = array(
-				'./skos:prefLabel[not(@xml:lang)]',
-				'./skos:prefLabel',
-			);
-			if (!empty($extradata['lang'])) {
-				array_unshift($prefLabelXpathQueries, "./skos:prefLabel[@xml:lang='".$extradata['lang']."']");
-			}
-			foreach ($prefLabelXpathQueries as $xpathQuery) {
-				if ($prefLabelElement = ($xpath->query($xpathQuery, $Description)->item(0))) {
-					$prefLabel = trim($prefLabelElement->nodeValue);
-					$document->dcterms_title = $prefLabel;
-					break;
-				}
-			}
-		}
-		
 		$document->xml = $Description->ownerDocument->saveXML($Description);
 		
 		//store namespaces:
@@ -379,38 +360,695 @@ class OpenSKOS_Rdf_Parser implements Countable
 		return $document;
 	}
 	
+	function __autoload($class_name) {
+		//echo("Call van autoload dinges<br />");
+		$file = dirname($_SERVER["SCRIPT_FILENAME"]). DIRECTORY_SEPARATOR .".." . DIRECTORY_SEPARATOR .".." . DIRECTORY_SEPARATOR."EPIC".DIRECTORY_SEPARATOR.$class_name.".php";
+		if(file_exists($file)) {
+			require_once($file);
+		} else {
+			trigger_error("Class ".$class_name." does not exist");
+		}
+	}
+	
+	/**
+	 * Processes an ISOCAT RDF export file as an import.
+	 * @param int $byUserId, optional If specified some actions inside the processing will be linked to that user
+	 * @return the number of documents imported
+	 * @author Martin Snijders
+	 */
+	public function processISOCatExportFile($byUserId = null)
+	{
+		// prevent db connection time out.  Just do whatever with the db, we are certain there is a job...
+		$model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
+		$job = $model->find(0)->current(); // Gets new DB object to prevent connection time out.		
+		
+		$xpath = new DOMXPath($this->getDOMDocument());
+		//support for only these namespaces:
+		foreach (self::$namespaces as $prefix => $uri) {
+			$xpath->registerNamespace($prefix, $uri);
+		}		
+		
+		//store all Namespaces used by this scheme in Database:
+		$namespaces = self::getDocNamespaces($this->getDOMDocument());
+		$this->getCollection()->setNamespaces($namespaces);
+		
+		$data = array(
+				'tenant' => $this->getOpt('tenant'),
+				'collection' => $this->_collection->id,
+		);
+		
+		$conceptsArray;
+		$conceptSchemesArray;
+		$skosCollectionsArray;
+		
+		// Holds uuid's mapped to a solr document
+		$tmpIdToDocuments = array();
+		
+		$handleServerClient = EPICHandleProxy::getInstance();
+		$handleResolverUrl = $handleServerClient->getResolver();
+		$handleServerPrefix = $handleServerClient->getPrefix();
+		$handleServerGUIDPrefix = $handleServerClient->getGuidPrefix();
+                $forwardLocationPrefix = $handleServerClient->getForwardLocationPrefix();
+                
+                $prefix = $handleResolverUrl . $handleServerPrefix . "/";
+                
+                $consistent = false;
+                
+		// Start parsing..
+		// concepts first..
+		$ConceptDomNodeList = $xpath->query('/rdf:RDF/rdf:Description[rdf:type/@rdf:resource="http://www.w3.org/2004/02/skos/core#Concept"]');
+		
+		// prevent db connection time out.  Just do whatever with the db, we are certain there is a job...
+		$model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
+		$job = $model->find(0)->current(); // Gets new DB object to prevent connection time out.
+				
+		foreach ($ConceptDomNodeList as $i) {
+			$document = self::concept2SolrDocument($i, $data, $xpath, (string)$this->getOpt('status'));
+			$conceptsArray[] = $document;
+			$isoCatUUID = current($document->offsetGet("uuid"));				
+			$tmpIdToDocuments[$isoCatUUID] = $document; // store with temporary uuid
+                        // set definite document uuid
+                        echo "import Concept UUID[" . $isoCatUUID . "] ... ";
+                        if ((substr($isoCatUUID,0,strlen($prefix)) === $prefix)) {
+                            $uuid = substr($isoCatUUID,strlen($prefix));
+                            $document->offsetUnset("uuid");
+                            $document->uuid = $uuid;
+                            $document->uri = $handleResolverUrl . $handleServerPrefix . "/" . $uuid;
+                            $document->newPID = FALSE;
+                        } else {
+                            $partBehindColon = substr(stristr($isoCatUUID, ":"),1); // Cut away everything before and including the first occurence of ":"
+                            $uuid = $handleServerGUIDPrefix . $partBehindColon . "_" . OpenSKOS_Utils::uuid();
+                            $document->offsetUnset("uuid");
+                            $document->uuid = $uuid;
+                            $document->uri = $handleResolverUrl . $handleServerPrefix . "/" . $uuid;
+                            $document->newPID = TRUE;
+                        }
+                        echo "to be used " . (current($document->offsetGet("newPID"))?"new":"existing") . " Concept UUID[" . current($document->offsetGet("uuid")) . "]\n";
+		}
+		
+		// prevent db connection time out.  Just do whatever with the db, we are certain there is a job...
+		$model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
+		$job = $model->find(0)->current(); // Gets new DB object to prevent connection time out.
+		
+		
+		$ConceptSchemeDomNodeList = $xpath->query('/rdf:RDF/rdf:Description[rdf:type/@rdf:resource="http://www.w3.org/2004/02/skos/core#ConceptScheme"]');
+		foreach ($ConceptSchemeDomNodeList as $i) {
+			$document = self::conceptScheme2SolrDocument($i, $data, $xpath, (string)$this->getOpt('status'));
+			$conceptSchemesArray[] = $document;
+			$isoCatUUID = current($document->offsetGet("uuid"));
+			$tmpIdToDocuments[$isoCatUUID] = $document; // store with temporary uuid
+			// set definite document uuid
+                        echo "import ConceptScheme UUID[" . $isoCatUUID . "] ... ";
+                        if ((substr($isoCatUUID,0,strlen($prefix)) === $prefix)) {
+                            $uuid = substr($isoCatUUID,strlen($prefix));
+                            $document->offsetUnset("uuid");
+                            $document->uuid = $uuid;
+                            $document->uri = $handleResolverUrl . $handleServerPrefix . "/" . $uuid;
+                            $document->newPID = FALSE;
+                        } else {
+                            $partBehindColon = substr(stristr($isoCatUUID, ":"),1); // Cut away everthing before and including the first occurence of ":"
+                            $uuid = $handleServerGUIDPrefix . $partBehindColon . "_" . OpenSKOS_Utils::uuid();
+                            $document->offsetUnset("uuid");
+                            $document->uuid = $uuid;
+                            $document->uri = $handleResolverUrl . $handleServerPrefix . "/" . $uuid;
+                            $document->newPID = TRUE;
+                        }
+                        echo "to be used " . (current($document->offsetGet("newPID"))?"new":"existing") . " ConceptScheme UUID[" . current($document->offsetGet("uuid")) . "]\n";
+		}
+		
+		// prevent db connection time out.  Just do whatever with the db, we are certain there is a job...
+		$model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
+		$job = $model->find(0)->current(); // Gets new DB object to prevent connection time out.
+				
+		$SkosCollectionDomNodeList = $xpath->query('/rdf:RDF/rdf:Description[rdf:type/@rdf:resource="http://www.w3.org/2004/02/skos/core#Collection"]');
+		foreach ($SkosCollectionDomNodeList as $i) {
+			$document = self::skosCollection2SolrDocument($i, $data, $xpath, (string)$this->getOpt('status'));
+			$skosCollectionsArray[] = $document;
+			$isoCatUUID = current($document->offsetGet("uuid"));
+			$tmpIdToDocuments[$isoCatUUID] = $document; // store with temporary uuid
+			// set definite document uuid
+                        echo "import SkosCollection UUID[" . $isoCatUUID . "] ... ";
+                        if ((substr($isoCatUUID,0,strlen($prefix)) === $prefix)) {
+                            $uuid = substr($isoCatUUID,strlen($prefix));
+                            $document->offsetUnset("uuid");
+                            $document->uuid = $uuid;
+                            $document->uri = $handleResolverUrl . $handleServerPrefix . "/" . $uuid;
+                            $document->newPID = FALSE;
+                        } else {
+                            $uuid = $handleServerGUIDPrefix . OpenSKOS_Utils::uuid();
+                            $document->offsetUnset("uuid");
+                            $document->uuid = $uuid;
+                            $document->uri = $handleResolverUrl . $handleServerPrefix . "/" . $uuid;
+                            $document->newPID = TRUE;
+                        }
+                        echo "to be used " . (current($document->offsetGet("newPID"))?"new":"existing") . " SkosCollection UUID[" . current($document->offsetGet("uuid")) . "]\n";
+                }
+		
+		// prevent db connection time out.  Just do whatever with the db, we are certain there is a job...
+		$model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
+		$job = $model->find(0)->current(); // Gets new DB object to prevent connection time out.
+				
+		// fix the uri's for relations:  conceptscheme:hasTopConcept , skosCollection:member , concept:inscheme and concept:inSkosCollection		
+		foreach ($conceptSchemesArray as $conceptSchemeDoc) {
+			$arrayOfDefiniteConceptUris = array();
+                        // prevent db connection time out.  Just do whatever with the db, we are certain there is a job...
+                        $model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
+                        $job = $model->find(0)->current(); // Gets new DB object to prevent connection time out.
+			if (count($conceptSchemeDoc->offsetGet("hasTopConcept")) > 0) {
+				foreach($conceptSchemeDoc->offsetGet("hasTopConcept") as $conceptUri) {
+					// lookup
+					if (!array_key_exists($conceptUri, $tmpIdToDocuments)) {
+                                            if ($consistent) {
+						//$isoCatUUIDOfConceptScheme = substr(current($conceptSchemeDoc->offsetGet("uri")), strpos("_", current($conceptSchemeDoc->offsetGet("uri"))));
+						$isoCatUUIDOfConceptScheme = current($conceptSchemeDoc->offsetGet("uuid"));
+						throw new Exception("Invalid reference in importfile: ConceptScheme with id: " . $isoCatUUIDOfConceptScheme . " ,refers to a unknown topConcept with id: " . $conceptUri);
+                                            } else {
+                                                $arrayOfDefiniteConceptUris[] = $conceptUri;
+                                            }
+					} else {
+                                            $conceptDoc = $tmpIdToDocuments[$conceptUri];
+                                            $arrayOfDefiniteConceptUris[] = current($conceptDoc->offsetGet("uri"));
+                                        }
+				}
+				$conceptSchemeDoc->offsetUnset("hasTopConcept"); // delete the old
+				// re-set with definite uri
+				foreach ($arrayOfDefiniteConceptUris as $definiteUri) {
+					$conceptSchemeDoc->hasTopConcept = $definiteUri; // multi value field
+				}
+			}
+		}
+		unset($arrayOfDefiniteConceptUris);
+		
+		// prevent db connection time out.  Just do whatever with the db, we are certain there is a job...
+		$model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
+		$job = $model->find(0)->current(); // Gets new DB object to prevent connection time out.
+		
+		
+		foreach ($skosCollectionsArray as $skosCollectionDoc) {
+			$arrayOfDefiniteConceptUris = array();
+			// prevent db connection time out.  Just do whatever with the db, we are certain there is a job...
+		  $model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
+		  $job = $model->find(0)->current(); // Gets new DB object to prevent connection time out.
+			if (count($skosCollectionDoc->offsetGet("hasTopConcept")) > 0) {
+				foreach($skosCollectionDoc->offsetGet("hasTopConcept") as $conceptUri) {
+					// lookup
+					if (!array_key_exists($conceptUri, $tmpIdToDocuments)) {
+                                            if ($consistent) {
+						//$isoCatUUIDOfSkosCollection = substr(current($skosCollectionDoc->offsetGet("uri")), strpos("_", current($skosCollectionDoc->offsetGet("uri"))));
+						$isoCatUUIDOfSkosCollection = current($skosCollectionDoc->offsetGet("uuid"));
+						throw new Exception("Invalid reference in importfile: SkosCollection with id: " . $isoCatUUIDOfSkosCollection . " ,refers to a unknown topConcept with id: " . $conceptUri);
+                                            } else {
+                                                $arrayOfDefiniteConceptUris[] = $conceptUri;
+                                            }
+					} else {
+                                            $conceptDoc = $tmpIdToDocuments[$conceptUri];
+                                            $arrayOfDefiniteConceptUris[] = current($conceptDoc->offsetGet("uri"));
+                                        }
+				}
+				$skosCollectionDoc->offsetUnset("hasTopConcept"); // delete the old
+				// re-set with definite uri
+				foreach ($arrayOfDefiniteConceptUris as $definiteUri) {
+					$skosCollectionDoc->hasTopConcept = $definiteUri; // multi value field
+				}
+			}
+		}
+		// clear MEM
+		unset($arrayOfDefiniteConceptUris);
+
+		// prevent db connection time out.  Just do whatever with the db, we are certain there is a job...
+		$model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
+		$job = $model->find(0)->current(); // Gets new DB object to prevent connection time out.
+
+		foreach ($conceptsArray as $conceptDoc) {
+			// for ConceptScheme references..
+			$arrayOfDefiniteConceptSchemeUris = array();
+			if (count($conceptDoc->offsetGet("inScheme")) > 0) {
+				foreach($conceptDoc->offsetGet("inScheme") as $conceptSchemeUri) {
+					// lookup
+					if (!array_key_exists($conceptSchemeUri, $tmpIdToDocuments)) {
+                                            if ($consistent) {
+						//$isoCatUUIDOfConcept = substr(current($conceptDoc->offsetGet("uri")), strpos("_", current($conceptDoc->offsetGet("uri"))));
+						$isoCatUUIDOfConcept = current($conceptDoc->offsetGet("uuid"));
+						throw new Exception("Invalid reference in importfile: Concept with id: " . $isoCatUUIDOfConcept . " ,refers to a unknown ConceptScheme with id: " . $conceptSchemeUri);
+                                            } else {
+                                                $arrayOfDefiniteConceptSchemeUris[] = $conceptSchemeUri;
+                                            }
+					} else {
+                                            $conceptSchemeDoc = $tmpIdToDocuments[$conceptSchemeUri];
+                                            $arrayOfDefiniteConceptSchemeUris[] = current($conceptSchemeDoc->offsetGet("uri"));
+                                        }
+				}
+				$conceptDoc->offsetUnset("inScheme"); // delete the old
+				// re-set with definite uri
+				foreach ($arrayOfDefiniteConceptSchemeUris as $definiteUri) {
+					$conceptDoc->inScheme = $definiteUri; // multi value field
+				}
+			}
+			unset($arrayOfDefiniteConceptSchemeUris);
+			
+			// for SkosCollection references..
+			$arrayOfDefiniteSkosCollectionUris = array();
+			if (count($conceptDoc->offsetGet("inSkosCollection")) > 0) {
+				foreach($conceptDoc->offsetGet("inSkosCollection") as $skosCollectionUri) {
+					// lookup
+					if (!array_key_exists($skosCollectionUri, $tmpIdToDocuments)) {
+                                            if ($consistent) {
+						//$isoCatUUIDOfConcept = substr(current($conceptDoc->offsetGet("uri")), strpos("_", current($conceptDoc->offsetGet("uri"))));
+						$isoCatUUIDOfConcept = current($conceptDoc->offsetGet("uuid"));
+						throw new Exception("Invalid reference in importfile: Concept with id: " . $isoCatUUIDOfConcept . " ,refers to a unknown SkosCollection with id: " . $skosCollectionUri);
+                                            } else {
+                                                $arrayOfDefiniteSkosCollectionUris[] = $skosCollectionUri;
+                                            }
+					} else {
+                                            $skosCollectionDoc = $tmpIdToDocuments[$skosCollectionUri];
+                                            $arrayOfDefiniteSkosCollectionUris[] = current($skosCollectionDoc->offsetGet("uri"));
+                                        }
+				}
+				$conceptDoc->offsetUnset("inSkosCollection"); // delete the old
+				// re-set with definite uri
+				foreach ($arrayOfDefiniteSkosCollectionUris as $definiteUri) {
+					$conceptDoc->inSkosCollection = $definiteUri; // multi value field
+				}
+			}
+			unset($arrayOfDefiniteSkosCollectionUris);
+		}
+		
+		// clear MEM
+		unset($arrayOfDefiniteConceptSchemeUris);
+		unset($arrayOfDefiniteSkosCollectionUris);
+		
+		$documents = new OpenSKOS_Solr_Documents();
+		
+		// prevent db connection time out.  Just do whatever with the db, we are certain there is a job...
+		$model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
+		$job = $model->find(0)->current(); // Gets new DB object to prevent connection time out.		
+		
+		$documents->addAll($conceptsArray);
+
+		// prevent db connection time out.  Just do whatever with the db, we are certain there is a job...
+		$model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
+		$job = $model->find(0)->current(); // Gets new DB object to prevent connection time out.
+				
+		$documents->addAll($conceptSchemesArray);
+
+		// prevent db connection time out.  Just do whatever with the db, we are certain there is a job...
+		$model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
+		$job = $model->find(0)->current(); // Gets new DB object to prevent connection time out.
+				
+		$documents->addAll($skosCollectionsArray);
+		
+		// clear MEM
+		unset($conceptsArray);
+		unset($conceptSchemesArray);
+		unset($skosCollectionsArray);
+		
+		// fix the identifiers in the xml field..				
+		foreach($documents as $document) {
+			// prevent db connection time out.  Just do whatever with the db, we are certain there is a job...
+			$model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
+			$job = $model->find(0)->current(); // Gets new DB object to prevent connection time out.
+					
+			$xml = current($document->offsetGet("xml"));
+			$uuid = current($document->offsetGet("uuid"));
+			foreach($tmpIdToDocuments as $key => $value) {
+                            $uuid = $value->offsetGet("uuid");
+                            $uuid = array_values($uuid);
+                            $uuid = array_shift($uuid);
+                            $old = "rdf:resource=\"" . $key . "\"";
+                            $new = "rdf:resource=\"" . $handleResolverUrl . $handleServerPrefix . "/" . $uuid . "\"";
+                            $xml = str_replace($old, $new, $xml);
+                            $old = "rdf:about=\"" . $key . "\"";
+                            $new = "rdf:about=\"" . $handleResolverUrl . $handleServerPrefix . "/" . $uuid . "\"";
+                            $xml = str_replace($old, $new, $xml);
+			}
+			$document->offsetUnset("xml");
+			$document->xml = $xml;
+		}
+		
+		// clear MEM
+		unset($tmpIdToDocuments);
+		
+		// generate the PID handles...
+		$createdHandles = array();
+		$error = FALSE;
+		$errorMesssage;
+		
+		foreach($documents as $document) {
+ 			$uuid = current($document->offsetGet("uuid"));
+                        $uri  = current($document->offsetGet("uri"));
+                        if (current($document->offsetGet("newPID"))) {
+                            //sleep(2);
+                            try {
+                                    // prevent db connection time out.  Just do whatever with the db, we are certain there is a job...
+                                    $model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
+                                    $job = $model->find(0)->current(); // Gets new DB object to prevent connection time out.
+
+                                    $handleServerClient->createNewHandleWithGUID($forwardLocationPrefix . $uuid, $uuid);
+                                    echo "created handle[" . $forwardLocationPrefix . $uuid . "," . $uuid . "]\n";
+                                    $createdHandles[] = $uuid;
+                            } catch(Exception $ex) {
+                                    // abort, try to delete already created handles...
+                                    $error = TRUE;
+                                    $errorMessage = $ex->getMessage();
+                                    echo($uuid." : ".$errorMessage."\n");
+                                    break;
+                            }
+                        }
+                        $document->offsetUnset("newPID");
+		}
+		
+		if ($error) { // rollback, try to delete already created handles..
+			
+			foreach($createdHandles as $createdHandle) {
+				
+				// prevent db connection time out.  Just do whatever with the db, we are certain there is a job...
+				$model = new OpenSKOS_Db_Table_Jobs(); // Gets new DB object to prevent connection time out.
+				$job = $model->find(0)->current(); // Gets new DB object to prevent connection time out.
+				
+				try {
+					$handleServerClient->removeHandle($createdHandle);
+				}
+				catch(Exception $exx) {
+					// nothing i can do anymore, bail out...
+					throw new Exception("Error occured when trying to reach PID handle server and create a handle. Error message was: " . $errorMessage . " ,Error occured when trying to delete PID handle. Error message was: " . $exx->getMessage());
+				}
+			}
+			// no handles were created or already created handles were succesfuly deleted, now bail out...
+			throw new Exception("Error occured when trying to reach PID handle server and create a handle. Error message was: " . $errorMessage);
+		}
+		
+		// clear MEM
+		unset($createdHandles);
+		
+		// commit to SOLR in chunks of a 100 docs...
+		if (null!==$this->getOpt('commit')) {
+			$counter = 0;
+			$toCommitDocuments = new OpenSKOS_Solr_Documents();
+			foreach($documents as $document) {
+				$toCommitDocuments->add($document);
+				$counter++;
+				if ($counter == 100) {
+					$this->_solr()->add($toCommitDocuments);
+					$this->_solr()->commit();
+					unset($toCommitDocuments);
+					$toCommitDocuments = new OpenSKOS_Solr_Documents();
+					$counter = 0;
+				}
+			}
+			if ($toCommitDocuments->count() > 0 ) { // commit the remainder..
+				$this->_solr()->add($toCommitDocuments);
+				$this->_solr()->commit();
+			}
+                        //echo "Committed: ".$documents."\n";
+		} else {
+			echo $documents."\n";
+		}
+		
+                echo "".count($documents)." documents\n";
+		return count($documents);
+	
+	}
+	
+	/**
+	 * Converts a ConceptScheme RDF structure to a Solr Document
+	 *
+	 * @author Martin Snijders
+	 *
+	 * @param DOMNode $ConceptScheme
+	 * @param array $extradata
+	 * @param DOMXPath $xpath
+	 * @param string $fallbackStatus The status which will be used if no other status is detected.
+	 * @return OpenSKOS_Solr_Document
+	 */
+	public static function conceptScheme2SolrDocument(
+			DOMNode $conceptScheme,
+			Array $extradata = array(),
+			DOMXPath $xpath = null,
+			$fallbackStatus = '')
+	{
+		// Creates the solr document
+		$document = new OpenSKOS_Solr_Document();
+	
+		$document->class = "ConceptScheme";
+		$document->xml = $conceptScheme->ownerDocument->saveXml($conceptScheme);
+		$document->collection = $extradata['collection'];
+		$document->tenant = $extradata['tenant'];
+	
+		if ($uri = $conceptScheme->getAttribute("rdf:about")) {
+			if (empty($uri)) {
+				throw new Exception("Illegal import file. The conceptScheme: ". $conceptScheme->ownerDocument->saveXml($conceptScheme) . " contains a non valid rdf:about attribute");
+			}
+		}
+		else {
+			throw new Exception("Illegal import file. The conceptScheme: ". $conceptScheme->ownerDocument->saveXml($conceptScheme) . " contains a non valid rdf:about attribute");
+		}
+		
+		$document->uuid = $uri; // temp uri is IsoCat identifier
+				
+		$titles = $xpath->query('./dc:title', $conceptScheme);
+		if (count($titles) > 0) { // if present multiple than just take first occurance...
+			$resource = $titles->item(0)->textContent;
+			$document->dcterms_title = $resource;
+		}
+		
+		$topConcepts = $xpath->query('./skos:hasTopConcept', $conceptScheme);
+		foreach($topConcepts as $topConcept) {
+			$document->hasTopConcept = $topConcept->getAttribute("rdf:resource");
+		}
+				
+		//store namespaces:
+		$availableNamespaces = array('rdf'); // make sure rdf is always registered for every item
+		foreach ($conceptScheme->childNodes as $childNode) {
+			if ($childNode->nodeType === XML_ELEMENT_NODE) {
+				$prefix = preg_replace('/^([a-z0-9\-\_]+)\:.+$/', '$1', $childNode->nodeName);
+				if (!in_array($prefix, $availableNamespaces)) {
+					$availableNamespaces[] = $prefix;
+				}
+			}
+		}		
+		if ($availableNamespaces) {
+			$document->xmlns = $availableNamespaces;
+		}
+		
+		return $document;
+	}
+	
+	/**
+	 * Converts a skosCollection RDF structure to a Solr Document
+	 * 
+	 * @author Martin Snijders
+	 *
+	 * @param DOMNode $ConceptScheme
+	 * @param array $extradata
+	 * @param DOMXPath $xpath
+	 * @param string $fallbackStatus The status which will be used if no other status is detected.
+	 * @return OpenSKOS_Solr_Document
+	 */
+	public static function skosCollection2SolrDocument(
+		DOMNode $skosCollection,
+		Array $extradata = array(),
+		DOMXPath $xpath = null,
+		$fallbackStatus = '')
+	{
+		// Creates the solr document
+		$document = new OpenSKOS_Solr_Document();
+		
+		$document->class = "SKOSCollection";		
+		$document->xml = $skosCollection->ownerDocument->saveXml($skosCollection);
+		$document->collection = $extradata['collection'];
+		$document->tenant = $extradata['tenant'];
+		
+		if ($uri = $skosCollection->getAttribute("rdf:about")) {
+			if (empty($uri)) {
+				throw new Exception("Illegal import file. The SKOSCollection: ". $skosCollection->ownerDocument->saveXml($skosCollection) . " contains a non valid rdf:about attribute");
+			}
+		}
+		else {
+			throw new Exception("Illegal import file. The conceptScheme: ". $skosCollection->ownerDocument->saveXml($skosCollection) . " contains a non valid rdf:about attribute");
+		}
+		
+		$document->uuid = $uri; // temp uri is IsoCat identifier
+		
+		$titles = $xpath->query('./dc:title', $skosCollection);
+		if (count($titles) > 0) { // if present multiple than just take first occurance...
+			$resource = $titles->item(0)->textContent;
+			$document->dcterms_title = $resource;
+		}
+		
+		// Set the Concepts that are in this skosCollection 
+		$memberConcepts = $xpath->query('./skos:member', $skosCollection);
+		foreach ($memberConcepts as $memberConcept) {
+			$document->hasTopConcept = $memberConcept->getAttribute("rdf:resource");
+		}
+				
+		//store namespaces:
+		$availableNamespaces = array('rdf'); // make sure rdf is always registered for every item
+		foreach ($skosCollection->childNodes as $childNode) {
+			if ($childNode->nodeType === XML_ELEMENT_NODE) {
+				$prefix = preg_replace('/^([a-z0-9\-\_]+)\:.+$/', '$1', $childNode->nodeName);
+				if (!in_array($prefix, $availableNamespaces)) {
+					$availableNamespaces[] = $prefix;
+				}
+			}
+		}		
+		if ($availableNamespaces) {
+			$document->xmlns = $availableNamespaces;
+		}
+		
+		return $document;		
+	}
+	
+	/**
+	 * Converts a Concept RDF structure to a Solr Document
+	 *
+	 * @author Martin Snijders
+	 *
+	 * @param DOMNode $Concept
+	 * @param array $extradata
+	 * @param DOMXPath $xpath
+	 * @param string $fallbackStatus The status which will be used if no other status is detected.
+	 * @return OpenSKOS_Solr_Document
+	 */
+	public static function concept2SolrDocument(
+			DOMNode $concept,
+			Array $extradata = array(),
+			DOMXPath $xpath = null,
+			$fallbackStatus = '')
+	{
+		// Creates the solr document
+		$document = new OpenSKOS_Solr_Document();
+		
+		$document->class = "Concept";
+		$document->xml = $concept->ownerDocument->saveXml($concept);
+		$document->collection = $extradata['collection'];
+		$document->tenant = $extradata['tenant'];		
+			
+		if ($uri = $concept->getAttribute("rdf:about")) {
+			if (empty($uri)) {
+				throw new Exception("Illegal import file. The concept: ". $concept->ownerDocument->saveXml($concept) . " contains a non valid rdf:about attribute");
+			}
+		}
+		else {
+			throw new Exception("Illegal import file. The concept: ". $concept->ownerDocument->saveXml($concept) . " contains a non valid rdf:about attribute");
+		}
+
+		$document->uuid = $uri; // temp uri is ISOcat identifier
+		
+		$statuses = $xpath->query('./openskos:status', $concept);
+		if (count($statuses) > 0) { // if present multiple than just take first occurance...
+			$resource = $statuses->item(0)->textContent;
+			$document->status = $resource;
+		}
+		
+		$inSchemes = $xpath->query('./skos:inScheme', $concept);
+		foreach($inSchemes as $inScheme) {
+			$document->inScheme = $inScheme->getAttribute("rdf:resource");
+		}	
+
+		$inSkosCollections = $xpath->query('./openskos:inSkosCollection', $concept);
+		foreach($inSkosCollections as $inSkosCollection) {
+			$document->inSkosCollection = $inSkosCollection->getAttribute("rdf:resource");
+		}
+		
+		$changeNotes = $xpath->query('./skos:changeNote', $concept);
+		foreach($changeNotes as $changeNote) {
+			$resource = $changeNote->textContent;
+			$document->changeNote = $resource;
+		}
+		
+		$notations = $xpath->query('./skos:notation', $concept);
+		foreach($notations as $notation) {
+			$resource = $notation->textContent;
+			$document->notation = $resource;
+		}
+		
+		$definitions = $xpath->query('./skos:definition', $concept);
+		foreach($definitions as $definition) {
+			$resource = $definition->textContent;
+			$document->definition = $resource;
+			if ($definitionValue = $definition->getAttribute("xml:lang")) {
+				$document->__set("definition@".$definitionValue, $resource);
+			}
+		}
+		
+		$prefLabels = $xpath->query('./skos:prefLabel', $concept);
+		foreach($prefLabels as $prefLabel) {
+			$resource = $prefLabel->textContent;
+			$document->prefLabel = $resource;
+			if ($languageValue = $prefLabel->getAttribute("xml:lang")) {
+				$document->__set("prefLabel@".$languageValue, $resource);
+			}
+		}
+		
+		$examples = $xpath->query('./skos:example', $concept);
+		foreach($examples as $example) {
+			$resource = $example->textContent;
+			$document->example = $resource;
+			if ($exampleValue = $example->getAttribute("xml:lang")) {
+				$document->__set("example@".$exampleValue, $resource);
+			}
+		}	
+		
+		$scopeNotes = $xpath->query('./skos:scopeNote', $concept);
+		foreach($scopeNotes as $scopeNote) {
+			$resource = $scopeNote->textContent;
+			$document->scopeNote = $resource;
+			if ($scopeNoteValue = $scopeNote->getAttribute("xml:lang")) {
+				$document->__set("scopeNote@".$scopeNoteValue, $resource);
+			}
+		}
+		
+		$notes = $xpath->query('./skos:note', $concept);
+		foreach($notes as $note) {
+			$resource = $note->textContent;
+			$document->note = $resource;
+			if ($noteValue = $note->getAttribute("xml:lang")) {   // Gaat dit goed ? Er lijkt geen note@ dynamic field te zijn in SOLR !!
+				$document->__set("note@".$noteValue, $resource);
+			}
+		}
+		
+		//store namespaces:
+		$availableNamespaces = array('rdf'); // make sure rdf is always registered for every item
+		foreach ($concept->childNodes as $childNode) {
+			
+			if ($childNode->nodeType === XML_ELEMENT_NODE) {
+				$prefix = preg_replace('/^([a-z0-9\-\_]+)\:.+$/', '$1', $childNode->nodeName);
+				if (!in_array($prefix, $availableNamespaces)) {
+					$availableNamespaces[] = $prefix;
+				}
+			}
+		}		
+		if ($availableNamespaces) {
+			$document->xmlns = $availableNamespaces;
+		}
+		
+		return $document;
+	}
+	
     /**
      * Processes an import file.
      * @param int $byUserId, optional If specified some actions inside the processing will be linked to that user
      */
 	public function process($byUserId = null)
 	{
-        // Set our Reconnecting adapter. It will try to reconnect if the db goes away.
-        Zend_Db_Table::setDefaultAdapter(
-            OpenSKOS_Db_Adapter_Pdo_Mysql_Reconnecting::createFromPdoMysql(
-                Zend_Db_Table::getDefaultAdapter()
-            )
-        );
-        
 		$xpath = new DOMXPath($this->getDOMDocument());
 		//support for only these namespaces:
 		foreach (self::$namespaces as $prefix => $uri) {
 			$xpath->registerNamespace($prefix, $uri);
 		}
 
-        // We need all elements inside <rdf:RDF> tags. No matter if they are on top or not. So we use // instead of /
-        $rdfRootXPath = '//rdf:RDF';
 		
 		//store all Namespaces used by this scheme in Database:
 		$namespaces = self::getDocNamespaces($this->getDOMDocument());
 		$this->getCollection()->setNamespaces($namespaces);
-
+		
+		// prepare solr document..
 		$addDoc = new DOMDocument('1.0', 'utf-8');
 		$addDoc->appendChild($addDoc->createElement('add'));
 		$documents = new OpenSKOS_Solr_Documents();
 		
 		//sometimes the first nodes of the XML file is a ConceptScheme:
-		$ConceptScheme = $xpath->query($rdfRootXPath . '/skos:ConceptScheme')->item(0);
+		$ConceptScheme = $xpath->query('/rdf:RDF/skos:ConceptScheme')->item(0);
 		if ($ConceptScheme) {
 			
 		    $doc = $this->getDOMDocument();
@@ -433,19 +1071,20 @@ class OpenSKOS_Rdf_Parser implements Countable
 		    );
 		    
 		    //clone all dc/dcterms nodes:
-		    $dcNodes = $xpath->query($rdfRootXPath . '/dc:* | ' . $rdfRootXPath . '/dcterms:* ');
+		    $dcNodes = $xpath->query('/rdf:RDF/dc:* | /rdf:RDF/dcterms:* ');
 		    foreach ($dcNodes as $dcNode) {
 		        $node->appendChild($dcNode->cloneNode(true));
 		    }
 		    $data = array(
 				'tenant' => $this->getOpt('tenant'),
 				'collection' => $this->_collection->id,
-				'lang' => $this->getOpt('lang'),
 			);
 			if ($this->getOpt('status')) $data['status'] = (string)$this->getOpt('status');
 			if ($this->getOpt('toBeChecked')) $data['toBeChecked'] = 'true';
 			
 		    $document = self::DomNode2SolrDocument($node, $data);
+// 		    var_dump($document);
+// 		    die();
 		    
 			if ($document) {
 				if ($this->handleUniqueConceptScheme($document, $byUserId)) {
@@ -456,7 +1095,7 @@ class OpenSKOS_Rdf_Parser implements Countable
 		
 		$notationsCheck = $this->fetchNotationsCheck();
 		
-		$Descriptions = $xpath->query($rdfRootXPath . '/rdf:Description');
+		$Descriptions = $xpath->query('/rdf:RDF/rdf:Description');
 		$d = 0;
 		foreach ($Descriptions as $i => $Description) {
 		    if ($i < $this->getFrom()) continue;
@@ -481,8 +1120,7 @@ class OpenSKOS_Rdf_Parser implements Countable
             // Some basic data
 			$data = array(
 				'tenant' => $this->getOpt('tenant'),
-				'collection' => $this->_collection->id,
-				'lang' => $this->getOpt('lang'),
+				'collection' => $this->_collection->id
 			);
             
 			// Check if document with same notation already exists.
@@ -986,4 +1624,23 @@ class OpenSKOS_Rdf_Parser implements Countable
         
         return $notationsCheck;
     }
+}
+
+class OpenSkosCollectionImportObject {
+	
+	public $id;
+	public $dcTitle;
+	
+}
+
+class OpenSkosConceptImportObject {
+
+	public $id;
+	public $changeNote;
+	public $notation;
+	public $inScheme;
+	public $prefLabel;
+	public $definition;
+	public $example;
+
 }

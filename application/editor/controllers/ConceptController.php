@@ -47,6 +47,7 @@ class Editor_ConceptController extends OpenSKOS_Controller_Editor
 		$form = Editor_Forms_Concept::getInstance(true);
 		$formData = $concept->toForm();
 		$form->getElement('conceptSchemeSelect')-> setMultiOptions($formData['conceptSchemeSelect']);
+		$form->getElement('skosCollectionSelect')-> setMultiOptions($formData['skosCollectionSelect']);
 		$form->populate($formData);
 		$this->view->form = $form->setAction($this->getFrontController()->getRouter()->assemble ( array ('controller'=>'concept', 'action' => 'save')));
 	}
@@ -114,6 +115,7 @@ class Editor_ConceptController extends OpenSKOS_Controller_Editor
 			$form->getElement('topConceptOf')->setValue($values);
 		}
 		$form->getElement('conceptSchemeSelect')->setMultiOptions($formData['conceptSchemeSelect']);
+		$form->getElement('skosCollectionSelect')->setMultiOptions($formData['skosCollectionSelect']);
 		unset($formData['topConceptOf']);
 
 		$form->setAction($this->getFrontController()->getRouter()->assemble ( array ('controller'=>'concept', 'action' => 'save')));
@@ -143,14 +145,18 @@ class Editor_ConceptController extends OpenSKOS_Controller_Editor
 			
 			//@FIXME should upgrade multi hidden fields to allow easy submission (change name to template something)
 			array_shift($formData['inScheme']);
+                        array_shift($formData['inSkosCollection']);
 			
 			$form->populate($formData);
 			
+                        $createNew;
 			if (null === $concept) {
 				$this->_requireAccess('editor.concepts', 'propose', self::RESPONSE_TYPE_PARTIAL_HTML);
 				$concept = new Editor_Models_Concept(new Api_Models_Concept());
+                                $createNew = true;
 			} else {
 				$this->_requireAccess('editor.concepts', 'edit', self::RESPONSE_TYPE_PARTIAL_HTML);
+                                $createNew = false;
 			}
 			
 			$formData = $form->getValues();
@@ -159,10 +165,11 @@ class Editor_ConceptController extends OpenSKOS_Controller_Editor
 			
 			//by reference.
 			$extraData = $concept->transformFormData($formData);
+                        //by reference
+                        $concept->setEPICHandle($extraData);
 			$concept->setConceptData($formData, $extraData);
 			
 			try {
-				
 				$user = OpenSKOS_Db_Table_Users::fromIdentity();
 				
 				$extraData = array_merge($extraData, array(
@@ -172,7 +179,7 @@ class Editor_ConceptController extends OpenSKOS_Controller_Editor
 						'toBeChecked' => (isset($extraData['toBeChecked']) ? (bool)$extraData['toBeChecked'] : false))
 				);
 				
-				if ( ! isset($extraData['uuid']) || empty($extraData['uuid'])) {					
+				if ( ! isset($extraData['uuid']) || empty($extraData['uuid'])) {
 					$extraData['uuid'] = $concept['uuid'];
 					$extraData['created_by'] = $extraData['modified_by'];
 					$extraData['created_timestamp'] = $extraData['modified_timestamp'];					
@@ -227,24 +234,40 @@ class Editor_ConceptController extends OpenSKOS_Controller_Editor
 							$extraData['collection'] = $firstConceptScheme['collection'];
 						}
 					}
+					if (isset($concept['inSkosCollection']) && isset($concept['inSkosCollection'][0])) {
+						$firstSkosCollection = Editor_Models_ApiClient::factory()->getSkosCollections($concept['inSkosCollection'][0]);
+						$firstSkosCollection = array_shift($firstSkosCollection);
+						if ( ! empty($firstSkosCollection) && isset($firstSkosCollection['collection'])) {
+							$extraData['collection'] = $firstSkosCollection['collection'];
+						}
+					}
 				}
 				
 				$concept->setConceptData($formData, $extraData);
 
-				if ($concept->save($extraData)) {
+				if ($concept->save($extraData,true,false,$createNew)) {
 					if (!isset($concept['inScheme'])) {
 						$newSchemes = array();
 					} else {
 						$newSchemes = $concept['inScheme'];
 					}
-					
 					if (!isset($oldData['inScheme'])) {
 						$oldSchemes = array();
 					} else {
 						$oldSchemes = $oldData['inScheme'];
 					}
-					
 					$concept->updateConceptSchemes($newSchemes, $oldSchemes);
+					if (!isset($concept['inSkosCollection'])) {
+						$newCollections = array();
+					} else {
+						$newCollections = $concept['inSkosCollection'];
+					}
+					if (!isset($oldData['inSkosCollection'])) {
+						$oldCollections = array();
+					} else {
+						$oldCollections = $oldData['inSkosCollection'];
+					}
+					$concept->updateSkosCollections($newCollections, $oldCollections);
 				} else {
 					return $this->_forward('edit', 'concept', 'editor', array('errors' => $concept->getErrors()));
 				}
@@ -268,6 +291,8 @@ class Editor_ConceptController extends OpenSKOS_Controller_Editor
 			$concept = $this->_getConcept();
 			$conceptSchemes = $apiClient->getConceptSchemeUriMap(null, $concept['tenant']);
 			$currentConceptSchemes = $concept->getConceptSchemes();
+			$skosCollections = $apiClient->getSkosCollectionUriMap(null, $concept['tenant']);
+			$currentSkosCollections = $concept->getSkosCollections();
 				
 			if (null !== $user)
 				$user->updateUserHistory($concept['uuid']);
@@ -275,11 +300,15 @@ class Editor_ConceptController extends OpenSKOS_Controller_Editor
 			$this->view->assign('currentConcept', $concept);
 			$this->view->assign('conceptLanguages', $concept->getConceptLanguages());
 			$this->view->assign('conceptSchemes', $conceptSchemes);
+			$this->view->assign('skosCollections', $skosCollections);
 	
 			$this->view->assign('footerData', $this->_generateFooter($concept));
 				
 			if (isset($currentConceptSchemes['inScheme'])) {
 				$this->view->assign('schemeUris', $currentConceptSchemes['inScheme']);
+			}
+			if (isset($currentSkosCollections['inSkosCollection'])) {
+				$this->view->assign('collectionUris', $currentSkosCollections['inSkosCollection']);
 			}
 		} catch (Zend_Exception $e) {
 			$this->view->assign('errorMessage', $e->getMessage());
@@ -425,7 +454,7 @@ class Editor_ConceptController extends OpenSKOS_Controller_Editor
 	}
 	
 	/**
-	 * @return Api_Models_Concept
+	 * @return Editor_Models_Concept
 	 */
 	protected function _getConcept()
 	{

@@ -41,6 +41,7 @@
 	$conceptSchemeOptions = json_encode($this->conceptSchemeOptions);
 	$profilesOptions = json_encode($this->profilesOptions);
 	$collectionsConceptSchemesMap = json_encode($this->collectionsConceptSchemesMap);
+	$collectionsSkosCollectionsMap = json_encode($this->collectionsSkosCollectionsMap);
 	
 $js = <<<JS
 window.addEvent('load', function() {
@@ -75,7 +76,7 @@ window.addEvent('load', function() {
 		});
 	}
 	
-	if ($('collections') && $('conceptScheme-element')) {
+	if ($('collections') && $('conceptScheme-element')) {	    
 		var collectionsConceptSchemesMap = {$collectionsConceptSchemesMap};
 		var updateConceptSchemes = function () {
 			var showConceptSchemes = [];

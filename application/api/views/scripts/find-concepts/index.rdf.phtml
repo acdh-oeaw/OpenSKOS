@@ -23,6 +23,10 @@
 <?php
 $namespaces = array('rdf');
 ob_start();
+$empty = true;
+if (count($this->response['response']['docs']) > 0) {
+	$empty = false;
+}
 foreach ($this->response['response']['docs'] as $doc) {
 	echo $doc['xml'];
 	$namespaces = array_merge($namespaces, $doc['xmlns']);
@@ -39,7 +43,13 @@ $namespaces = array_unique($namespaces);
 		endif;
 	endforeach
 	?>
+	
+	<?php //if ($empty)
+  //fix bedacht door Menzo... z'n eerste regel php!!!
+  if($empty || !in_array("openskos", $namespaces)) { ?>
 	xmlns:openskos="http://openskos.org/xmlns#"
+	<?php } ?>
+	
 	<?php foreach ($this->response['response'] as $key => $var): if ($key == 'docs') continue;?>
 	openskos:<?php echo $key?>="<?php echo $var?>"
 	<?php endforeach?>

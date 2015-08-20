@@ -46,6 +46,13 @@ var EditorConcept = new Class({
 	        'removeSchemeLayer',
 	        'addSchemeLayer',
 	        'getCurrentSchemes',
+	        //multi collection methods,
+	        '_bindCollectionTabs',
+	        'getCurrentCollection',
+	        'showCollectionLayer',
+	        'removeCollectionLayer',
+	        'addCollectionLayer',
+	        'getCurrentCollections',
 	        //Util
 	        '_getOpenTab'
 	        ],
@@ -54,6 +61,7 @@ var EditorConcept = new Class({
 		var self = this;
 		this._bindLanguageTabs();
 		this._bindSchemeTabs();
+                this._bindCollectionTabs();
 		this._bindMultiInputActions();
 		
 		$(document.body).addEvent('click:relay(#conceptSwitch)', function (e) {
@@ -83,6 +91,7 @@ var EditorConcept = new Class({
 		this.bindTabsHover();
 		this.showLanguageLayer();
 		this.showSchemeLayer();
+                this.showCollectionLayer();
 		this.showMappingProperties();
 		this.toggleConceptSchemeWarning();
 		this.showPrefLabelInTitle();
@@ -90,7 +99,7 @@ var EditorConcept = new Class({
 	},
 	
 	toggleConceptSchemeWarning: function () {
-		var rightTabs = $('concept-edit-tabs').getElement('.concept-form-right');
+		var rightTabs = $('concept-edit-tabs').getElement('.concept-form-right.concept-form-scheme');
 		if (rightTabs.getElements('.concept-multi-hidden-template:not(.template)').length == 0) {
 			rightTabs.getElement('.concept-multi-hidden-add').addClass('warning');
 		} else {
@@ -388,7 +397,140 @@ var EditorConcept = new Class({
 		return hasLayer;
 	},
 	
-	showMappingProperties: function () {
+	getCurrentCollection: function () {
+		return this._getOpenTab('inSkosCollection[]');
+	},
+	
+	showCollectionLayer: function (uuid) {
+		var self = this;
+		
+		if (typeof uuid === 'undefined') {
+			if ($$('input[name="inSkosCollection[]"]').length > 1){
+				uuid = $$('input[name="inSkosCollection[]"]')[1].get('value');
+			} else {
+				return;
+			}		
+		}
+		Array.each($$('[name="inSkosCollection[]"]'), function (tab) {
+			if (uuid === tab.get('value')) {
+				tab.getParent('span').addClass('isOpen');
+			} else {
+				tab.getParent('span').removeClass('isOpen');
+			} 
+		});
+		Array.each($$('.multi-field-complex'), function (el) {
+			if ( ! el.getParent('#concept-edit-mapping-properties')) { // Mapping properties are not per collection. See showMappingProperties.
+				el.hide();
+				Array.each(el.getElements('.multi-field-list'), function (ulEl) {
+					if(ulEl.hasClass(uuid)) {
+						el.show();
+						ulEl.show();
+						ulEl.getPrevious('.concept-complex-title').show();
+					} else {
+						ulEl.hide();
+						ulEl.getPrevious('.concept-complex-title').hide();
+					}
+				});
+			}
+		});
+                /*
+		Array.each($('concept-edit-collection-properties').getElements('input'), function (input) {
+			if (input.get('value') === uuid) {
+				input.getParent('label').show();
+			} else {
+				input.getParent('label').hide();			
+			}
+		});
+                */
+	},
+	
+	removeCollectionLayer: function (uuid) {
+		var self = this;
+		Array.each($$('input[name="inSkosCollection[]"]'), function (tab) {
+			if (($$('input[name="inSkosCollection[]"]').length > 1) && (tab.get('value') === uuid)) {
+				tab.getParent('.concept-multi-hidden-template').dispose();
+                                /*
+				Array.each($('concept-edit-collection-properties').getElements('input'), function (input) {
+					if (input.get('value') === uuid) {
+						input.getParent('label').dispose();
+					}
+				});
+                                */
+				Array.each ($$('.multi-field-complex'), function (el) {
+					Array.each(el.getElements('.multi-field-list'), function (ulEl) {
+						if (ulEl.hasClass(uuid)) {
+							ulEl.dispose();
+						}
+					});
+				});
+				self._removeConceptsBaseUrl(uuid);
+			}
+			self.showSchemeLayer();
+		});	
+	},
+	
+	addCollectionLayer: function (uuid, name) { //@TODO refactor - creation of tabs can be refactored.
+		if (!this.hasSchemeLayer(uuid)) {
+			var template = $$('input[name="inSkosCollection[]"]').pick().getParent('span').clone().removeClass('template');
+			template.getElement('.concept-multi-hidden-label').set('text', name);
+			template.getElement('input[name="inSkosCollection[]"]').set('value', uuid);
+			template.inject($$('input[name="inSkosCollection[]"]').pick().getParent('span').getNext('.concept-multi-hidden-add'), 'before');
+		}
+		
+		Array.each($$('.multi-field-complex'), function (el) {
+			if ( ! el.getParent('#concept-edit-mapping-properties')) { // Mapping properties are not per collection.
+				Array.each(el.getElements('.multi-field-list'), function (listEl) {
+					var newList = null;
+					Array.each(listEl.getElements('.concept-link-header>img'), function (scheme) {
+						if (scheme.hasClass(uuid)) {
+							if (newList === null) {
+								newList = listEl.clone().erase('class').addClass('multi-field-list').addClass(uuid).empty();
+								newList.empty();
+							} 
+							var linkUuid = scheme.getParent('.concept-link-header').getNext('.concept-link-content>a').get('class');
+							if (newList.getElement('li>.concept-link-content>a[class="' +linkUuid + '"]') === null) {
+								newList.adopt(scheme.getParent('li').clone());
+							}
+						}
+					});
+					if (newList !== null) {
+						newList.inject(listEl, 'after');
+					}
+				});
+			}
+		});
+		
+		//@FIXME with templates prob
+                /*
+		var isTopElement = null;
+		if ( $('concept-edit-collection-properties').getElement('input[type=checkbox]') !== null) {
+			isTopElement = $('concept-edit-collection-properties').getElements('input[type=checkbox]').pick().getParent('label').clone();
+		} else {
+			isTopElement = new Element('label').adopt(new Element('input', {type: 'checkbox', value: uuid, name: 'topConceptOf[]'}));
+		}
+		
+		isTopElement.set('for', uuid).getElement('input').set('value', uuid);
+		$('concept-edit-collection-properties').adopt(isTopElement);
+		
+		SqueezeBox.close();
+		this.showSchemeLayer(uuid);
+		
+		this._addConceptsBaseUrl(uuid);
+		
+		//this.toggleConceptSchemeWarning();
+                */
+	},
+	
+	hasCollectionLayer: function (uuid) { //@TODO refactor layers into a general class.
+		var hasLayer = false;
+		Array.each($$('[name="inSkosCollection[]"]'), function (tab) {
+			if (tab.get('value') === uuid)
+				hasLayer = true;
+		});
+		return hasLayer;
+	},
+
+        showMappingProperties: function () {
 		if ($('concept-edit-mapping-properties')) {
 			$('concept-edit-mapping-properties').getElements('.multi-field-complex').each(function (el) {
 				if (el.getElement('.multi-field-list').getElements('.concept-link:not(.template)').length > 0) {
@@ -414,7 +556,17 @@ var EditorConcept = new Class({
 		return currentSchemes;
 	},
 	
-	setApproved: function () {
+	getCurrentCollections: function () {
+		var currentCollections = [];
+		Array.each($$('input[name="inSkosCollection[]"]'), function (inputElement) {
+			if (inputElement.get('value') !== '') {
+				currentCollections.push(inputElement.get('value'));
+			} 
+		}); 
+		return currentCollections;
+	},
+
+    setApproved: function () {
 		if (this.isInEditMode()) {
 			var editForm = $('Editconcept');
 			if (editForm.getElement('[type=checkbox][name=toBeChecked]')) {
@@ -499,20 +651,40 @@ var EditorConcept = new Class({
 	_bindSchemeTabs: function () {
 		var self = this;
 		//Scheme tabs controls
-		$(document.body).addEvent('click:relay(.concept-form-right .concept-multi-hidden-label)', function (e) {
+		$(document.body).addEvent('click:relay(.concept-form-scheme .concept-multi-hidden-label)', function (e) {
 			e.stop();
 			self.showSchemeLayer(this.getNext('input[name="inScheme[]"]').get('value'));
 		});
-		$(document.body).addEvent('click:relay(.concept-form-right .concept-multi-hidden-add)', function (e){
+		$(document.body).addEvent('click:relay(.concept-form-scheme .concept-multi-hidden-add)', function (e){
 			Editor.View.showActionModal($('concept-scheme-settings').clone());
 		});	
-		$(document.body).addEvent('click:relay(.concept-form-right .concept-multi-hidden-remove)', function (e) {
+		$(document.body).addEvent('click:relay(.concept-form-scheme .concept-multi-hidden-remove)', function (e) {
 			e.stop();
 			self.removeSchemeLayer(this.getPrevious('input[name="inScheme[]"]').get('value'));
 		});
 		$(document.body).addEvent('click:relay([name=conceptSchemeOk])', function (e) {
 			e.stop();
 			self.addSchemeLayer(this.getPrevious('select').get('value'), this.getPrevious('select').getElement(':selected').get('text'));
+		});
+	}.protect(),
+	
+	_bindCollectionTabs: function () {
+		var self = this;
+		//Collection tabs controls
+		$(document.body).addEvent('click:relay(.concept-form-skosCollection .concept-multi-hidden-label)', function (e) {
+			e.stop();
+			self.showCollectionLayer(this.getNext('input[name="inSkosCollection[]"]').get('value'));
+		});
+		$(document.body).addEvent('click:relay(.concept-form-skosCollection .concept-multi-hidden-add)', function (e){
+			Editor.View.showActionModal($('skos-collection-settings').clone());
+		});	
+		$(document.body).addEvent('click:relay(.concept-form-skosCollection .concept-multi-hidden-remove)', function (e) {
+			e.stop();
+			self.removeCollectionLayer(this.getPrevious('input[name="inSkosCollection[]"]').get('value'));
+		});
+		$(document.body).addEvent('click:relay([name=skosCollectionOk])', function (e) {
+			e.stop();
+			self.addCollectionLayer(this.getPrevious('select').get('value'), this.getPrevious('select').getElement(':selected').get('text'));
 		});
 	}.protect(),
 	

@@ -145,7 +145,7 @@ form input[type=submit], form input[type=reset] {
 	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #f6f8f9),
 		color-stop(50%, #e5ebee), color-stop(51%, #d7dee3),
 		color-stop(100%, #f5f7f9) ); /* webkit */
-	filter: progid :     DXImageTransform.Microsoft.gradient (   
+	filter: progid:DXImageTransform.Microsoft.gradient (   
                                                             
 		  startColorstr =     '#f6f8f9', endColorstr =     '#f5f7f9',
 		GradientType =     0 ); /* ie */
@@ -176,7 +176,7 @@ form.elementsOnly,form.subformsOnly fieldset,form.allInDisplayGroups fieldset fi
 	/* firefox */
 	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #ffffff),
 		color-stop(100%, #e5e5e5) ); /* webkit */
-	filter: progid :     DXImageTransform.Microsoft.gradient (    
+	filter: progid:DXImageTransform.Microsoft.gradient (    
                                                             
 		  startColorstr =     '#ffffff', endColorstr =     '#e5e5e5',
 		GradientType =     0 ); /* ie */
@@ -207,7 +207,7 @@ form.subformsOnly fieldset legend,form.allInDisplayGroups fieldset fieldset lege
 	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #f6f8f9),
 		color-stop(50%, #e5ebee), color-stop(51%, #d7dee3),
 		color-stop(100%, #f5f7f9) ); /* webkit */
-	filter: progid :     DXImageTransform.Microsoft.gradient (    
+	filter: progid:DXImageTransform.Microsoft.gradient (    
                                                             
 		  startColorstr =     '#f6f8f9', endColorstr =     '#f5f7f9',
 		GradientType =     0 ); /* ie */

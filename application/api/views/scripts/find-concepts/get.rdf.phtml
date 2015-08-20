@@ -20,4 +20,13 @@
  */
 ?>
 <?php
-include dirname(__FILE__) . '/../concept/' . basename(__FILE__);
+include_once dirname(__DIR__) . '/../../../../library/mimeparse/mimeparse.php';
+$ah = filter_var($_SERVER['HTTP_ACCEPT'], FILTER_UNSAFE_RAW, FILTER_NULL_ON_FAILURE);
+$mp = new Mimeparse;
+$mt = $mp->best_match(array('text/html', 'application/rdf+xml'), $ah);
+if ($mt && 'text/html' == $mt) {
+    header("Location: ../../browser/index.php?start=0&number=10&id=".$this->concept['uri']);
+    die();
+} else {
+    include dirname(__FILE__) . '/../concept/' . basename(__FILE__);
+}

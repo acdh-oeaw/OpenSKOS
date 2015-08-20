@@ -35,6 +35,9 @@ class Api_IndexController extends OpenSKOS_Rest_Controller {
 
 	public function deleteAction() {
 	}
+	
+	public function headAction() {
+	}
 
 }
 

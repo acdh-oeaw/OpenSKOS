@@ -30,6 +30,13 @@ window.addEvent('resize', function() {
 	fitCentralPanelWidth();
 });
 
+window.addEvent('load', function() {
+  setTimeout(function(){ 
+    fitPanelHeights();
+    fitCentralPanelWidth();
+  }, 50);
+});
+
 function fitCentralPanelWidth() {
 	var totalWidth = $('content').getStyle('width').toInt();
 	
@@ -112,7 +119,12 @@ function makeLeftPanelResizable()
 	var subConceptsOffset = 10;
 	var initialLeftColumnWidth = $('left-panel').getStyle('width').toInt();
 	var initialSearchTextWidth = $('left-panel').getElement('input[name="searchText"]').getStyle('width').toInt();
-	if ($('left-panel').getElement('#conceptScheme-element')) {
+	if ($('left-panel').getElement('#skosCollection-element')) {
+    var initialSkosCollectionWidth = $('left-panel').getElement('#skosCollection-element').getStyle('width').toInt();
+  } else {
+    var initialSkosCollectionWidth = 0;
+  }
+  if ($('left-panel').getElement('#conceptScheme-element')) {
 		var initialConceptSchemeWidth = $('left-panel').getElement('#conceptScheme-element').getStyle('width').toInt();
 	} else {
 		var initialConceptSchemeWidth = 0;
@@ -153,7 +165,15 @@ function makeLeftPanelResizable()
 			}
 		});
 		
-		$('left-panel').getElements('#conceptScheme-element').each(function (el) {
+		$('left-panel').getElements('#skosCollection-element').each(function (el) {
+      el.setStyle('width', initialSkosCollectionWidth + newWidth - initialLeftColumnWidth);
+    });
+    
+    $('left-panel').getElements('#skosCollection-element').each(function (el) {
+      el.setStyle('width', initialSkosCollectionWidth + newWidth - initialLeftColumnWidth + 12); // +12 for scroller.
+    });
+    
+    $('left-panel').getElements('#conceptScheme-element').each(function (el) {
 			el.setStyle('width', initialConceptSchemeWidth + newWidth - initialLeftColumnWidth);
 		});
 		

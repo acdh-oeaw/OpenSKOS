@@ -136,6 +136,22 @@
 				</div>
 			</div>
 			<div id="concept-content-right">
+				<div id="concept-skosCollection-tab-container" class="concept-skosCollection-tab-container">
+					<div id="concept-view-skosCollection-tabs">
+						<ul id="tab-links-collection">
+							<?php if(is_array($this->collectionUris)):?>
+							<?php $isFirst = true; ?>
+							<?php foreach ($this->collectionUris as $key=>$skosCollection) :?>
+							<?php $skosCollectionTitle = isset($this->skosCollections[$skosCollection]['dcterms_title'][0])  ? $this->skosCollections[$skosCollection]['dcterms_title'][0] : 'NA'; ?>
+							<?php $skosCollectionId = isset($this->skosCollections[$skosCollection]['uuid']) ? $this->skosCollections[$skosCollection]['uuid'] : ''; ?>
+							<li id="tab_<?php echo $skosCollectionId ?>" class="concept-tab-link tab<?php if ($isFirst): $isFirst = false?> active<?php endif?>">
+								<a <?php if ($isFirst): $isFirst = false?> class="active"<?php endif?> href="#" id="scheme_<?php echo $skosCollectionId; ?>"><?php echo $skosCollectionTitle; ?></a>
+							</li>
+							<?php endforeach?>
+							<?php endif?>
+						</ul>
+					</div>
+                                </div>
 				<div id="concept-scheme-tab-container" class="concept-scheme-tab-container">
 					<div id="concept-view-scheme-tabs">
 						<ul id="tab-links-scheme">

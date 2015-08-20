@@ -36,6 +36,7 @@ class OpenSKOS_Application_Resource_Acl extends Zend_Application_Resource_Resour
     	$acl->addResource('editor');
     	$acl->addResource('editor.concepts', 'editor');
     	$acl->addResource('editor.concept-schemes', 'editor');
+    	$acl->addResource('editor.skos-collections', 'editor');
     	$acl->addResource('editor.institution', 'editor');
     	$acl->addResource('editor.collections', 'editor');
     	$acl->addResource('editor.delete-all-concepts-in-collection', 'editor');
@@ -49,6 +50,7 @@ class OpenSKOS_Application_Resource_Acl extends Zend_Application_Resource_Resour
     	$acl->allow(OpenSKOS_Db_Table_Users::USER_ROLE_EDITOR, 'editor.concepts', array('propose'));
     	$acl->allow(OpenSKOS_Db_Table_Users::USER_ROLE_ADMINISTRATOR, 'editor.concepts',  array('full-create', 'edit', 'delete'));
     	$acl->allow(OpenSKOS_Db_Table_Users::USER_ROLE_ADMINISTRATOR, 'editor.concept-schemes', array('index', 'create', 'edit', 'delete', 'manage-icons'));
+    	$acl->allow(OpenSKOS_Db_Table_Users::USER_ROLE_ADMINISTRATOR, 'editor.skos-collections', array('index', 'create', 'edit', 'delete', 'manage-icons'));
     	$acl->allow(OpenSKOS_Db_Table_Users::USER_ROLE_ADMINISTRATOR, 'editor.institution',  null);
     	$acl->allow(OpenSKOS_Db_Table_Users::USER_ROLE_ADMINISTRATOR, 'editor.collections',  array('index', 'manage'));
     	$acl->allow(OpenSKOS_Db_Table_Users::USER_ROLE_ADMINISTRATOR, 'editor.users',  array('index', 'manage'));

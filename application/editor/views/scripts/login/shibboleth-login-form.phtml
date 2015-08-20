@@ -1,0 +1,40 @@
+<?php 
+/**
+ * OpenSKOS
+ *
+ * LICENSE
+ *
+ * This source file is subject to the GPLv3 license that is bundled
+ * with this package in the file LICENSE.txt.
+ * It is also available through the world-wide-web at this URL:
+ * http://www.gnu.org/licenses/gpl-3.0.txt
+ * If you did not receive a copy of the license and are unable to
+ * obtain it through the world-wide-web, please send an email
+ * to license@zend.com so we can send you a copy immediately.
+ *
+ * @category   OpenSKOS
+ * @package    OpenSKOS
+ * @copyright  Copyright (c) 2014 Meertens Instituut. (http://www.meertens.knaw.nl)
+ * @author     Matthijs Brouwer
+ * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
+ */
+?>
+<?php $this->headTitle($this->translate('Shibboleth Access for OpenSKOS Editor'))?>
+
+<p>No access for '<i><?php echo($this->translate($this->eppn));?></i>'</p>
+
+<?php if($this->emailform) {?>
+<p>  
+	<form action="<?php echo $this->url(array('controller' => 'login', 'action' => 'shibboleth-login'));?>" method="post"/>
+	  <p>
+	    <textarea name="request" placeholder="please provide additional information like name, e-mail and organisation"></textarea>
+	  </p>
+	  <p>  
+	  <input type="submit" value="cancel" onclick="location.href='<?php echo $this->url(array('controller' => 'login', 'action' => ''));?>'; return false;" />
+	  <input type="submit" name="requestAccess" value="request access" />
+	  </p>
+	</form>
+</p>
+<?php } ?>	
+
+<p>Or use <a href="<?php echo $this->url(array('controller' => 'login', 'action' => ''));?>">login</a> to get access
