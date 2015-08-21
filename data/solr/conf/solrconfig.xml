@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <config>
   <luceneMatchVersion>LUCENE_34</luceneMatchVersion>
-  <dataDir>${data.dir:./openskos/data}</dataDir>
+  <dataDir>${data.dir:./solr/openskos_midd/data}</dataDir>
   <indexConfig>
     <useCompoundFile>false</useCompoundFile>
     <mergeFactor>100</mergeFactor>
