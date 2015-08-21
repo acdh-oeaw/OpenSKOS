@@ -2,13 +2,13 @@ SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL';
 
-CREATE SCHEMA IF NOT EXISTS `openskos` DEFAULT CHARACTER SET utf8 ;
-USE `openskos` ;
+-- CREATE SCHEMA IF NOT EXISTS `openskos` DEFAULT CHARACTER SET utf8 ;
+-- USE `openskos` ;
 
 -- -----------------------------------------------------
--- Table `openskos`.`tenant`
+-- Table `tenant`
 -- -----------------------------------------------------
-CREATE  TABLE IF NOT EXISTS `openskos`.`tenant` (
+CREATE  TABLE IF NOT EXISTS `tenant` (
   `code` CHAR(10) NOT NULL ,
   `name` VARCHAR(150) NULL DEFAULT NULL ,
   `organisationUnit` VARCHAR(100) NULL DEFAULT NULL ,
@@ -25,9 +25,9 @@ DEFAULT CHARACTER SET = utf8;
 
 
 -- -----------------------------------------------------
--- Table `openskos`.`collection`
+-- Table `collection`
 -- -----------------------------------------------------
-CREATE  TABLE IF NOT EXISTS `openskos`.`collection` (
+CREATE  TABLE IF NOT EXISTS `collection` (
   `id` INT(11) NOT NULL AUTO_INCREMENT ,
   `code` CHAR(10) NULL DEFAULT NULL ,
   `tenant` CHAR(10) NOT NULL ,
@@ -45,7 +45,7 @@ CREATE  TABLE IF NOT EXISTS `openskos`.`collection` (
   INDEX `ix_allow_oai` (`allow_oai` ASC) ,
   CONSTRAINT `fk_collection_tenant`
     FOREIGN KEY (`tenant` )
-    REFERENCES `openskos`.`tenant` (`code` )
+    REFERENCES `tenant` (`code` )
     ON DELETE CASCADE
     ON UPDATE CASCADE)
 ENGINE = InnoDB
@@ -55,9 +55,9 @@ COLLATE = utf8_general_ci;
 
 
 -- -----------------------------------------------------
--- Table `openskos`.`namespace`
+-- Table `namespace`
 -- -----------------------------------------------------
-CREATE  TABLE IF NOT EXISTS `openskos`.`namespace` (
+CREATE  TABLE IF NOT EXISTS `namespace` (
   `prefix` VARCHAR(25) NOT NULL COMMENT '			' ,
   `uri` VARCHAR(150) NULL DEFAULT NULL ,
   PRIMARY KEY (`prefix`) )
@@ -66,21 +66,21 @@ DEFAULT CHARACTER SET = utf8;
 
 
 -- -----------------------------------------------------
--- Table `openskos`.`collection_has_namespace`
+-- Table `collection_has_namespace`
 -- -----------------------------------------------------
-CREATE  TABLE IF NOT EXISTS `openskos`.`collection_has_namespace` (
+CREATE  TABLE IF NOT EXISTS `collection_has_namespace` (
   `collection` INT(11) NOT NULL ,
   `namespace` VARCHAR(25) NOT NULL ,
   PRIMARY KEY (`collection`, `namespace`) ,
   INDEX `fk_collection_has_namespace_namespace1` (`namespace` ASC) ,
   CONSTRAINT `fk_collection_has_namespace_namespace1`
     FOREIGN KEY (`namespace` )
-    REFERENCES `openskos`.`namespace` (`prefix` )
+    REFERENCES `namespace` (`prefix` )
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT `fk_collection_has_namespace_collection1`
     FOREIGN KEY (`collection` )
-    REFERENCES `openskos`.`collection` (`id` )
+    REFERENCES `collection` (`id` )
     ON DELETE CASCADE
     ON UPDATE CASCADE)
 ENGINE = InnoDB
@@ -88,9 +88,9 @@ DEFAULT CHARACTER SET = utf8;
 
 
 -- -----------------------------------------------------
--- Table `openskos`.`user`
+-- Table `user`
 -- -----------------------------------------------------
-CREATE  TABLE IF NOT EXISTS `openskos`.`user` (
+CREATE  TABLE IF NOT EXISTS `user` (
   `id` INT(11) NOT NULL AUTO_INCREMENT ,
   `email` VARCHAR(100) NOT NULL ,
   `name` VARCHAR(150) NOT NULL ,
@@ -111,7 +111,7 @@ CREATE  TABLE IF NOT EXISTS `openskos`.`user` (
   UNIQUE INDEX `eduPersonPrincipalName` (`eppn` ASC, `tenant` ASC) ,
   CONSTRAINT `fk_user_tenant`
     FOREIGN KEY (`tenant` )
-    REFERENCES `openskos`.`tenant` (`code` )
+    REFERENCES `tenant` (`code` )
     ON DELETE CASCADE
     ON UPDATE CASCADE)
 ENGINE = InnoDB
@@ -120,9 +120,9 @@ DEFAULT CHARACTER SET = utf8;
 
 
 -- -----------------------------------------------------
--- Table `openskos`.`job`
+-- Table `job`
 -- -----------------------------------------------------
-CREATE  TABLE IF NOT EXISTS `openskos`.`job` (
+CREATE  TABLE IF NOT EXISTS `job` (
   `id` INT(11) NOT NULL AUTO_INCREMENT ,
   `collection` INT(11) NOT NULL ,
   `user` INT(11) NOT NULL ,
@@ -140,12 +140,12 @@ CREATE  TABLE IF NOT EXISTS `openskos`.`job` (
   INDEX `fk_job_collection` (`collection` ASC) ,
   CONSTRAINT `fk_job_collection`
     FOREIGN KEY (`collection` )
-    REFERENCES `openskos`.`collection` (`id` )
+    REFERENCES `collection` (`id` )
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT `fk_job_user`
     FOREIGN KEY (`user` )
-    REFERENCES `openskos`.`user` (`id` )
+    REFERENCES `user` (`id` )
     ON DELETE CASCADE
     ON UPDATE CASCADE)
 ENGINE = InnoDB
@@ -153,9 +153,9 @@ AUTO_INCREMENT = 7
 DEFAULT CHARACTER SET = utf8;
 
 -- -----------------------------------------------------
--- Table `openskos`.`notations`
+-- Table `notations`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `openskos`.`notations` (
+CREATE TABLE IF NOT EXISTS `notations` (
   `notation` INT NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`notation`) 
 )
@@ -163,9 +163,9 @@ ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 
 -- -----------------------------------------------------
--- Table `openskos`.`search_profiles`
+-- Table `search_profiles`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `openskos`.`search_profiles` (
+CREATE TABLE IF NOT EXISTS `search_profiles` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(150) NOT NULL,
   `searchOptions` BLOB,
@@ -174,12 +174,12 @@ CREATE TABLE IF NOT EXISTS `openskos`.`search_profiles` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_search_profile_user`
     FOREIGN KEY (`creatorUserId`)
-    REFERENCES `openskos`.`user` (`id`)
+    REFERENCES `user` (`id`)
     ON DELETE SET NULL
     ON UPDATE CASCADE,
   CONSTRAINT `fk_search_profile_tenant`
     FOREIGN KEY (`tenant`)
-    REFERENCES `openskos`.`tenant` (`code`)
+    REFERENCES `tenant` (`code`)
     ON DELETE CASCADE
     ON UPDATE CASCADE
 )
