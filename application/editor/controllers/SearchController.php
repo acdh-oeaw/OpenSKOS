@@ -56,26 +56,44 @@ class Editor_SearchController extends OpenSKOS_Controller_Editor
                // Reset allowedConceptScheme
                if ($loggedUser->disableSearchProfileChanging) {
                    $searchOptions['allowedConceptScheme'] = array();
+                   $searchOptions['allowedSkosCollection'] = array();
                }
 
-            } elseif ((!isset($searchOptions['conceptScheme']) || !isset($detailedSearchOptions['conceptScheme'])) 
-                || $searchOptions['conceptScheme'] != $detailedSearchOptions['conceptScheme']) {
-
-                if ($loggedUser->isAllowedToUseSearchProfile('custom')) {
-                    // Change concept schemes selection
-                    $detailedSearchOptions['searchProfileId'] = 'custom';
-                    if (isset($searchOptions['conceptScheme'])) {
-                        $detailedSearchOptions['conceptScheme'] = $searchOptions['conceptScheme'];
-                    } else {
-                        $detailedSearchOptions['conceptScheme'] = array();
-                    }
-
-                    $loggedUser->setSearchOptions($detailedSearchOptions);
-                }
-            }
+            } 
+            else {
+	            if ((!isset($searchOptions['conceptScheme']) || !isset($detailedSearchOptions['conceptScheme'])) 
+	                || $searchOptions['conceptScheme'] != $detailedSearchOptions['conceptScheme']) {
+	
+	                if ($loggedUser->isAllowedToUseSearchProfile('custom')) {
+	                    // Change concept schemes selection
+	                    $detailedSearchOptions['searchProfileId'] = 'custom';
+	                    if (isset($searchOptions['conceptScheme'])) {
+	                    	$detailedSearchOptions['conceptScheme'] = $searchOptions['conceptScheme'];
+	                    } else {
+	                        $detailedSearchOptions['conceptScheme'] = array();
+	                    }
+	
+	                    $loggedUser->setSearchOptions($detailedSearchOptions);
+	                }
+	            }
+	            if ((!isset($searchOptions['skosCollection']) || !isset($detailedSearchOptions['skosCollection']))
+	            		|| $searchOptions['skosCollection'] != $detailedSearchOptions['skosCollection']) {
+	            
+	            			if ($loggedUser->isAllowedToUseSearchProfile('custom')) {
+	            				// Change concept schemes selection
+	            				$detailedSearchOptions['searchProfileId'] = 'custom';
+	            				if (isset($searchOptions['skosCollection'])) {
+	            					$detailedSearchOptions['skosCollection'] = $searchOptions['skosCollection'];
+	            				} else {
+	            					$detailedSearchOptions['skosCollection'] = array();
+	            				}
+	            
+	            				$loggedUser->setSearchOptions($detailedSearchOptions);
+	            			}
+	            		}
+            }    
         }
-
-        // Select the concepts
+		// Select the concepts
         $apiClient = new Editor_Models_ApiClient();
         try {
             $conceptsRaw = $apiClient->searchConcepts(
@@ -96,6 +114,7 @@ class Editor_SearchController extends OpenSKOS_Controller_Editor
                 'numFound' => $conceptsRaw['numFound'],
                 'concepts' => $concepts,
                 'conceptSchemeOptions' => $this->_getConceptSchemeOptions($searchOptions),
+                'skosCollectionOptions' => $this->_getSkosCollectionOptions($searchOptions),
                 'profileOptions' => $this->_getProfilesSelectOptions()
             )
         );
@@ -160,6 +179,7 @@ class Editor_SearchController extends OpenSKOS_Controller_Editor
 
         // Send profiles options to refresh the search profile selector.
         $this->view->assign('conceptSchemeOptions', $this->_getConceptSchemeOptions());
+        $this->view->assign('skosCollectionOptions', $this->_getSkosCollectionOptions());
         $this->view->assign('profilesOptions', $this->_getProfilesSelectOptions());
 
         // Set concept scheme - collections map.
@@ -169,8 +189,14 @@ class Editor_SearchController extends OpenSKOS_Controller_Editor
         foreach ($conceptSchemes as $conceptSchemeUri => $conceptSchemeCollection) {
             $collectionsConceptSchemesMap[$conceptSchemeCollection][] = $conceptSchemeUri;
         }
+        $skosCollections = $apiClient->getSkosCollectionMap('uri', 'collection');
+        $collectionsSkosCollectionsMap = array_fill_keys(array_values($skosCollections), array());
+        foreach ($skosCollections as $skosCollectionUri => $skosCollectionCollection) {
+        	$collectionsSkosCollectionsMap[$skosCollectionCollection][] = $skosCollectionUri;
+        }
 
         $this->view->assign('collectionsConceptSchemesMap', $collectionsConceptSchemesMap);
+        $this->view->assign('collectionsSkosCollectionsMap', $collectionsSkosCollectionsMap);
     }
 
     public function setOptionsAction()
@@ -274,6 +300,7 @@ class Editor_SearchController extends OpenSKOS_Controller_Editor
     {
         // Send profiles options to refresh the search profile selector.
         $this->view->assign('conceptSchemeOptions', $this->_getConceptSchemeOptions());
+        $this->view->assign('skosCollectionOptions', $this->_getSkosCollectionOptions());
         $this->view->assign('profilesOptions', $this->_getProfilesSelectOptions());
 
         $this->_helper->_layout->setLayout('editor_modal_box');
@@ -324,6 +351,37 @@ class Editor_SearchController extends OpenSKOS_Controller_Editor
         }
 
         return $conceptSchemeOptions;
+    }
+    
+    private function _getSkosCollectionOptions($searchOptions = array())
+    {
+    	$skosCollectionOptions = array();
+    
+    	$userOptions = $this->getCurrentUser()->getSearchOptions();
+    	$searchForm = Editor_Forms_Search::factory();
+    
+    	if ($this->getCurrentUser()->disableSearchProfileChanging) {
+    		if (isset($searchOptions['allowedSkosCollection'])) {
+    			$userOptions['allowedSkosCollection'] = $searchOptions['allowedSkosCollection'];
+    		}
+    
+    		$skosCollectionsKey = 'allowedSkosCollection';
+    		$skosCollectionsEl = $searchForm->getElement('allowedSkosCollection');
+    	} else {
+    		$skosCollectionsKey = 'skosCollection';
+    		$skosCollectionsEl = $searchForm->getElement('skosCollection');
+    	}
+    
+    	$rawOptions = $skosCollectionsEl->getAttrib('options');
+    	foreach ($rawOptions as $id => $name) {
+    		$skosCollectionOptions[] = array(
+    				'id' => $id,
+    				'name' => $name,
+    				'selected' => (isset($userOptions[$skosCollectionsKey]) && in_array($id, $userOptions[$skosCollectionsKey]))
+    		);
+    	}
+    
+    	return $skosCollectionOptions;
     }
 
     private function _getProfilesSelectOptions()

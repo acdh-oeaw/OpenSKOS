@@ -100,8 +100,13 @@ class OpenSKOS_Db_Table_Row_User extends Zend_Db_Table_Row
 				->addValidator($validator)
 				->addValidator(new Zend_Validate_StringLength(array('min' => 6)));
 			
-                        $userData = $this->toArray();
-                        $userData['defaultSearchProfileIds'] = explode(', ', $userData['defaultSearchProfileIds']);
+                        $userData = $this->toArray(); 
+                        //added: check on existence defaultSearchProfileIds (Matthijs)
+                        if(isset($userData['defaultSearchProfileIds'])) {
+                        	$userData['defaultSearchProfileIds'] = explode(', ', $userData['defaultSearchProfileIds']);
+                        } else {
+                        	$userData['defaultSearchProfileIds'] = array();
+                        }
 			$form->setDefaults($userData);
 			
 			if (!$this->id || (Zend_Auth::getInstance()->hasIdentity() && Zend_Auth::getInstance()->getIdentity()->id == $this->id)) {

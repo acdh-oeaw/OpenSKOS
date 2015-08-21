@@ -41,7 +41,8 @@ class Editor_Forms_SearchOptions extends Zend_Form
 			->buildSimpleElements()
 			->buildUserInteraction()
 			->buildCollections()
-			->buildConceptSchemes();
+			->buildConceptSchemes()
+			->buildSkosCollections();
 			
 		if (! $this->_currentTenant->disableSearchInOtherTenants) {
 			$this->buildTenants();
@@ -335,6 +336,21 @@ class Editor_Forms_SearchOptions extends Zend_Form
 		$this->addElement('multiCheckbox', 'conceptScheme', array(
 			'label' => _('Concept schemes'),
 			'multiOptions' => $conceptSchemes
+		));
+		return $this;
+	}
+	
+	/**
+	 * @return Editor_Forms_SearchOptions
+	 */
+	protected function buildSkosCollections()
+	{
+		$apiClient = new Editor_Models_ApiClient();
+		$skosCollections = $apiClient->getAllSkosCollectionUriTitlesMap();
+	
+		$this->addElement('multiCheckbox', 'skosCollection', array(
+				'label' => _('Skos Collection'),
+				'multiOptions' => $skosCollections
 		));
 		return $this;
 	}

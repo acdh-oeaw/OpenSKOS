@@ -158,6 +158,73 @@ class Editor_CollectionsController extends OpenSKOS_Controller_Editor
 		$this->getHelper('FlashMessenger')->addMessage(_('An import job is scheduled'));
 		$this->_helper->redirector('edit', null, null, array('collection' => $collection->code));
 	}
+	
+	/* Added Martin */
+	public function importIsoCatAction()
+	{
+		$this->_requireAccess('editor.collections', 'manage');
+	
+		$collection = $this->_getCollection();
+		if ($collection->OAI_baseURL) {
+			$this->getHelper('FlashMessenger')->setNamespace('error')->addMessage(_('Since this collection has an OAI Server as source, you can not upload files for import.'));
+			$this->_helper->redirector('edit', null, null, array('collection' => $collection->code));
+			return;
+		}
+		$form = $collection->getIsoCatImportUploadForm();
+		$formData = $this->_request->getPost();
+		if ($form->isValid($formData)) {
+			$upload = new Zend_File_Transfer_Adapter_Http();
+			$path = Zend_Controller_Front::getInstance()->getParam('bootstrap')->getOption('upload_path');
+			$tenant_path = $path .'/'.$collection->tenant;
+			if (!is_dir($tenant_path)) {
+				if (!@mkdir($tenant_path, 0777, true)) {
+					$this->getHelper('FlashMessenger')->setNamespace('error')->addMessage(_('Failed to create upload folder'));
+					$this->_helper->redirector('edit', null, null, array('collection' => $collection->code));
+					return;
+				}
+			}
+			try {
+				$fileName = uniqid() . '_' . $_FILES['xml']['name'];
+				$upload
+				->addFilter('Rename', array(
+						'target' => $tenant_path . '/' . $fileName,
+						'overwrite' => false))
+						->receive();
+			} catch (Zend_File_Transfer_Exception $e) {
+				$form->getElement('xml')->setErrors(array($e->getMessage()));
+				return $this->_forward('edit');
+			} catch (Zend_Filter_Exception $e) {
+				$form->getElement('xml')->setErrors(array(_('A file with that name is already scheduled for import. Please delete the job if you want to import it again.')));
+				return $this->_forward('edit');
+			}
+			$model = new OpenSKOS_Db_Table_Jobs();
+			$fileinfo = $upload->getFileInfo('xml');
+			$parameters = array(
+					'name' => $fileName,
+					'type' => $fileinfo['xml']['type'],
+					'size' => $fileinfo['xml']['size'],
+					'destination' => $fileinfo['xml']['destination'],
+					'deletebeforeimport' => (int)$formData['deletebeforeimport'] == 1,
+					'status' => $formData['status'],
+					'ignoreIncomingStatus' => (int)$formData['ignoreIncomingStatus'] == 1,
+					'lang' => $formData['lang'],
+					'toBeChecked' => (int)$formData['toBeChecked'] == 1,
+					'purge' => (int)$formData['purge'] == 1,
+					'onlyNewConcepts' => (int)$formData['onlyNewConcepts'] == 1
+			);
+			$job = $model->fetchNew()->setFromArray(array(
+					'collection' => $collection->id,
+					'user' => Zend_Auth::getInstance()->getIdentity()->id,
+					'task' => OpenSKOS_Db_Table_Row_Job::JOB_TASK_IMPORT_ISOCAT,
+					'parameters' => serialize($parameters),
+					'created' => new Zend_Db_Expr('NOW()')
+			))->save();
+		} else {
+			return $this->_forward('edit');
+		}
+		$this->getHelper('FlashMessenger')->addMessage(_('An import job is scheduled'));
+		$this->_helper->redirector('edit', null, null, array('collection' => $collection->code));
+	}
 
 	public function saveAction()
 	{

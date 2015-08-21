@@ -120,7 +120,8 @@
         <field name="ConceptScheme" type="string" indexed="true" stored="true" required="false" multiValued="true"/> 
         <field name="inScheme" type="string" indexed="true" stored="true" required="false" multiValued="true"/> 
         <field name="hasTopConcept" type="string" indexed="true" stored="true" required="false" multiValued="true"/> 
-        <field name="topConceptOf" type="string" indexed="true" stored="true" required="false" multiValued="true"/> 
+        <field name="topConceptOf" type="string" indexed="true" stored="true" required="false" multiValued="true"/>
+        <field name="inSkosCollection" type="string" indexed="true" stored="true" required="false" multiValued="true"/>
    <!-- 
 	<copyField source="ConceptScheme" dest="ConceptSchemes" />
 	<copyField source="inScheme" dest="ConceptSchemes" />

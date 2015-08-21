@@ -86,6 +86,7 @@ class OpenSKOS_Solr_Queryparser_Editor
 		->_parseSearchForOnlyTopConcepts()
 		->_parseSearchForOnlyOrphanedConcepts()		
 		->_parseSearchForConceptScheme()
+		->_parseSearchForSkosCollection()
 		->_parseSearchForUserInteraction()
 		->_parseSearchForTenants()
 		->_parseSearchForCollections();
@@ -295,6 +296,42 @@ class OpenSKOS_Solr_Queryparser_Editor
 		}
 
 		return $this;
+	}
+	
+	/**
+	 * Parses the part of the query for searching for specified concept.
+	 *
+	 * @return OpenSKOS_Solr_Queryparser_Editor
+	 */
+	protected function _parseSearchForSkosCollection()
+	{
+		if (isset($this->_availableSearchOptions['skosCollections'])) {
+			$allSchemes = $this->_availableSearchOptions['skosCollections'];
+		} else {
+			$allSchemes = array();
+		}
+	
+		if (isset($this->_searchOptions['skosCollection'])
+				&& ! empty($this->_searchOptions['skosCollection'])
+				&& count($allSchemes) != count($this->_searchOptions['skosCollection'])) {
+						
+					$query = '';
+					foreach ($this->_searchOptions['skosCollection'] as $scheme) {
+						$query .= ( ! empty($query) ? ' OR ' : '');
+						$query .= 'inSkosCollection:"' . $scheme . '"';
+					}
+						
+					if ( ! empty($query) && count($this->_searchOptions['skosCollection']) > 1) {
+						$query = '(' . $query . ')';
+					}
+						
+					if ( ! empty($query)) {
+						$this->_addDefaultQuerySeparator();
+						$this->_query .= $query;
+					}
+				}
+	
+				return $this;
 	}
 
 	/**

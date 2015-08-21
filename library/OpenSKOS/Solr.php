@@ -73,15 +73,6 @@ class OpenSKOS_Solr
 	{
 		return new OpenSKOS_Solr($options);
 	}
-    
-    /**
-     * Creates new OpenSKOS_Solr with the configuration of the current one.
-	 * @return OpenSKOS_Solr
-	 */
-	public function cleanCopy()
-	{
-		return new OpenSKOS_Solr($this->config);
-	}
 	
 	/**
 	 * 
@@ -188,7 +179,18 @@ class OpenSKOS_Solr
         if(empty ($uuid)){
             return false;
         }
-		return (boolean)preg_match('/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/', $uuid);
+        
+        // @Martin Snijders Why test if a uuid is valid ??  Uuid's should be produced by the system, not by users...
+        // Also, why try and see if this is a uuid or a uri ? This could have done more elegantlky...
+        // My uuid has a isocat extension part, so i had to fix this here..
+        //$partAfterUnderscore = substr($uuid, (strpos($uuid, "_")+1));
+        if(!preg_match("/\//",$uuid)) {
+        	$partAfterUnderscore = preg_replace("/^(.*?)_/U","",$uuid);
+        } else {
+        	$partAfterUnderscore = $uuid;
+        }
+        return (boolean)preg_match('/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/', $partAfterUnderscore);
+		//return (boolean)preg_match('/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/', $uuid);
 	}
     
 	public static function md5_uuid($value)

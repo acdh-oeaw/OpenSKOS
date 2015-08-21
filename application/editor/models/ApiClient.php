@@ -29,6 +29,13 @@ class Editor_Models_ApiClient
 	const CONCEPT_SCHEMES_CACHE_KEY = 'ConceptSchemes';
 	
 	/**
+	 * Holds the key to the skosCollections cache.
+	 *
+	 * @var string
+	 */
+	const SKOS_COLLECTIONS_CACHE_KEY = 'SkosCollections';
+	
+	/**
 	 * Holds the maximum rows limit to be used if there is no other rows limit.
 	 *
 	 * @var int
@@ -53,6 +60,16 @@ class Editor_Models_ApiClient
 		return $this->getConceptSchemeMap('uri', array('dcterms_title' => 0), null, $tenant, $inCollections);
 	}
 	
+	/**
+	 * Gets a list of all skosCollections.
+	 *
+	 * @return array An array with the labels of the skosCollections
+	 */
+	public function getAllSkosCollectionUriTitlesMap($tenant = null, $inCollections = array())
+	{
+		return $this->getSkosCollectionMap('uri', array('dcterms_title' => 0), null, $tenant, $inCollections);
+	}
+
 	/**
 	 * Gets array concept scheme data of type $field => $value.
 	 * 
@@ -82,6 +99,34 @@ class Editor_Models_ApiClient
 	}
 	
 	/**
+	 * Gets array skosCollection data of type $field => $value.
+	 *
+	 * @param string $field
+	 * @param string $value
+	 * @return array
+	 */
+	public function getSkosCollectionMap($field, $value, $uris = null, $tenant = null, $inCollections = array())
+	{
+		$skosCollections = $this->getSkosCollections($uris, $tenant, $inCollections);
+
+		$result = array();
+		foreach ($skosCollections as $skosCollection) {
+			if (is_array($value)) {
+				$valueKey = key($value);
+				$valueIndex = $value[$valueKey];
+				$result[$skosCollection[$field]] = isset($skosCollection[$valueKey][$valueIndex]) ? $skosCollection[$valueKey][$valueIndex] : null;
+			} else if (is_array($field)){
+				$fieldKey = key($field);
+				$fieldIndex = $field[$fieldKey];
+				$result[$skosCollection[$fieldKey][$fieldIndex]] = isset($skosCollection[$value]) ? $skosCollection[$value] : null;
+			} else {
+				$result[$skosCollection[$field]] = isset($skosCollection[$value]) ? $skosCollection[$value] : null;
+			}
+		}
+		return $result;
+	}
+	
+	/**
 	 * Gets array concept scheme data of type uri => data.
 	 * 
 	 * @param string $uri, optional If specified - selects the specified concept scheme
@@ -94,6 +139,24 @@ class Editor_Models_ApiClient
 		foreach ($conceptSchemes as $scheme) {
 			if (isset($scheme['uri'])) {
 				$result[$scheme['uri']] = $scheme;
+			}
+		}
+		return $result;
+	}
+	
+	/**
+	 * Gets array concept scheme data of type uri => data.
+	 * 
+	 * @param string $uri, optional If specified - selects the specified concept scheme
+	 * @return array
+	 */
+	public function getSkosCollectionUriMap($uris = null, $tenant = null, $inCollections = array())
+	{
+		$skosCollections = $this->getSkosCollections($uris, $tenant, $inCollections);
+		$result = array();
+		foreach ($skosCollections as $collection) {
+			if (isset($collection['uri'])) {
+				$result[$collection['uri']] = $collection;
 			}
 		}
 		return $result;
@@ -168,6 +231,74 @@ class Editor_Models_ApiClient
 	}
 	
 	/**
+	 * Get all SkosCollection documents for the current tenant.
+	 * The result is once cached in Zend_Registry and retrieved from there when search again.
+	 *
+	 * @param string $uri, optional If specified - selects the specified concept scheme
+	 * @param string $tenant, optional If specified concept schemes for this tenant will be returned. If not - concept schemes for current tenant.
+	 * @return array An array of concept scheme documents data, or the single concept scheme data if uri is specified.
+	 */
+	public function getSkosCollections($uri = null, $tenant = null, $inCollections = array())
+	{
+		if (null === $tenant) {
+			$tenant = $this->_getCurrentTenant()->code;
+		}
+	
+		if (null === $inCollections) {
+			$inCollections = array();
+		}
+	
+		$skosCollections = OpenSKOS_Cache::getCache()->load(self::SKOS_COLLECTIONS_CACHE_KEY);
+		if ($skosCollections === false) {
+			$skosCollections = array();
+		}
+	
+		$schemesCacheKey = $tenant . implode('', $inCollections);
+	
+		if (! isset($skosCollections[$schemesCacheKey])) {
+			$query = 'class:SKOSCollection tenant:' . $tenant;
+				
+			if (! empty($inCollections)) {
+				if (count($inCollections) == 1) {
+					$query .= sprintf(' collection:%s', $inCollections[0]);
+				} else {
+					$query .= sprintf(' collection:(%s)', implode(' OR ', $inCollections));
+				}
+			}
+				
+			$response = Api_Models_Concepts::factory()->setQueryParams(array('rows' => self::DEFAULT_MAX_ROWS_LIMIT))->getConcepts($query);
+			$response = $response['response'];
+				
+			$skosCollections[$schemesCacheKey] = array();
+			if ($response['numFound'] > 0) {
+				foreach ($response['docs'] as $doc) {
+					$doc['iconPath'] = Editor_Models_ConceptScheme::buildIconPath($doc['uuid'], $this->_tenant);
+					$skosCollections[$schemesCacheKey][] = $doc;
+				}
+			}
+				
+			usort($skosCollections[$schemesCacheKey], array('Editor_Models_SkosCollection', 'compareDocs'));
+				
+			OpenSKOS_Cache::getCache()->save($skosCollections, self::SKOS_COLLECTIONS_CACHE_KEY);
+		}
+	
+		if (null !== $uri) {
+			if (!is_array($uri)) {
+				$uri = array($uri);
+			}
+			$schemes = array();
+			foreach ($skosCollections[$schemesCacheKey] as $schemeLine) {
+				if (isset($schemeLine['uri']) && in_array($schemeLine['uri'], $uri)) {
+					$schemes[$schemeLine['uri']] = $schemeLine;
+				}
+			}
+			return $schemes;
+		}
+	
+		return $skosCollections[$schemesCacheKey];
+	}
+	
+	/**
 	 * Gets a list of concepts matching the search options.
 	 * 
 	 * @param array $searchOptions
@@ -179,6 +310,7 @@ class Editor_Models_ApiClient
 		
 		$availableOptions = Editor_Forms_SearchOptions::getAvailableSearchOptions();
 		$availableOptions['conceptSchemes'] = $this->getAllConceptSchemeUriTitlesMap();
+		$availableOptions['skosCollections'] = $this->getAllSkosCollectionUriTitlesMap();
 		
 		$query = OpenSKOS_Solr_Queryparser_Editor::factory()->parse($searchOptions, $editorOptions['languages'], $availableOptions, $this->_getCurrentTenant());
 		

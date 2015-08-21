@@ -58,4 +58,7 @@ class OaiPmh_IndexController extends OpenSKOS_Rest_Controller
 	public function deleteAction() {
 		$this->_501('DELETE');
 	}
+	
+	public function headAction() {		
+	}
 }

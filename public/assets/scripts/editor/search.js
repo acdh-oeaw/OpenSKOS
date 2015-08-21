@@ -80,6 +80,8 @@ EditorSearch = new Class({
 			this.searchForm.getElements('[name=truncate]').addEvent('change', this.search);
 			this.searchForm.addEvent('change:relay([name="conceptScheme[]"])', this.delayedSearch);
 			this.searchForm.addEvent('change:relay([name="allowedConceptScheme[]"])', this.delayedSearch);
+			this.searchForm.addEvent('change:relay([name="skosCollection[]"])', this.delayedSearch);
+			this.searchForm.addEvent('change:relay([name="allowedSkosCollection[]"])', this.delayedSearch);
 			if (this.searchForm.getElement('[name="searchProfileId"]')) {
 				this.searchForm.getElements('[name="searchProfileId"]').addEvent('change', this.search);
 			}
@@ -88,6 +90,8 @@ EditorSearch = new Class({
 			this.searchForm.getElements('[name=truncate]').removeEvent('change', this.search);
 			this.searchForm.getElements('[name="conceptScheme[]"]').removeEvent('change', this.delayedSearch);
 			this.searchForm.getElements('[name="allowedConceptScheme[]"]').removeEvent('change', this.delayedSearch);
+			this.searchForm.getElements('[name="skosCollection[]"]').removeEvent('change', this.delayedSearch);
+			this.searchForm.getElements('[name="allowedSkosCollection[]"]').removeEvent('change', this.delayedSearch);
 			if (this.searchForm.getElement('[name="searchProfileId"]')) {
 				this.searchForm.getElements('[name="searchProfileId"]').removeEvent('change', this.search);
 			}
@@ -112,6 +116,14 @@ EditorSearch = new Class({
 		this.searchForm.send();
 	},
 	delayedSearch: function () {
+	  //empty result troep
+	  Editor.View.emptyContainer(this.searchResults.getElement('.concepts-list'), '.concept-link');
+	  this.searchResults.getElement('.more-results').hide();
+	  this.searchResults.getElement('.actions').hide();
+	  this.searchResults.getElement('.errors').show();
+	  this.searchResults.getElement('.errors').set('text', 'Please wait...');
+	  this.searchResults.getElement('.results-found').set('text', '');
+	  //do other stuff
 		clearTimeout(this.delayedSearchTimeoutHandle);
 		this.delayedSearchTimeoutHandle = this.search.delay(this.delayedSearchDelay);
 	},
@@ -161,6 +173,7 @@ EditorSearch = new Class({
 				}
 				
 				this.setConceptSchemeOptions(data.conceptSchemeOptions);
+				this.setSkosCollectionOptions(data.skosCollectionOptions);
 				this.setProfilesOptions(data.profileOptions);
 			} else {
 				this.showError(data.message);
@@ -261,6 +274,30 @@ EditorSearch = new Class({
                     elementPrefix = 'allowedConceptScheme';
                 }
                 
+		if (this.searchForm.getElement('#' + elementPrefix + '-element')) {
+			var conceptSchemeElement = this.searchForm.getElement('#' + elementPrefix + '-element');
+			conceptSchemeElement.empty();
+			
+			for (var i = 0; i < conceptSchemeOptions.length; i ++) {
+				var optionKey = elementPrefix + '-' + conceptSchemeOptions[i].id.replace(/[^\w]/g, '');
+				var label = new Element('label', {'for': optionKey});
+				var checkbox = new Element('input', {'type': 'checkbox', 'name': elementPrefix + '[]', 'id': optionKey, 'value': conceptSchemeOptions[i].id});
+				if (conceptSchemeOptions[i].selected) {
+					checkbox.setAttribute('checked', 'checked');
+				}
+				label.adopt(checkbox);
+				label.appendText(conceptSchemeOptions[i].name);
+				conceptSchemeElement.adopt(label);
+				conceptSchemeElement.adopt(new Element('br'));
+			}
+		}
+	},
+	setSkosCollectionOptions: function (conceptSchemeOptions) {
+        var elementPrefix = 'skosCollection';
+        if (! this.searchForm.getElement('#' + elementPrefix + '-element')) {
+            elementPrefix = 'allowedSkosCollection';
+        }
+        
 		if (this.searchForm.getElement('#' + elementPrefix + '-element')) {
 			var conceptSchemeElement = this.searchForm.getElement('#' + elementPrefix + '-element');
 			conceptSchemeElement.empty();

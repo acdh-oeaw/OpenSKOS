@@ -26,6 +26,7 @@ window.addEvent('load', function() {
 	Editor.View = new EditorView();
 	Editor.Concept = new EditorConcept();
 	Editor.ConceptScheme = new EditorConceptScheme();
+	Editor.SkosCollection = new EditorSkosCollection();
 	Editor.Relations = new EditorRelations();
 	Editor.Search = new EditorSearch($('searchform'), $('search-results'));
 	Editor.ConceptsSelection = new EditorConceptsSelection($('selection-list'));

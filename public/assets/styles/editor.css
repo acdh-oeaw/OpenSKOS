@@ -220,9 +220,10 @@ div#content {
   width: 9px;
 }
 
-#left-top-panel #conceptScheme-element,
-#left-top-panel #allowedConceptScheme-element, #AdvancedSearchOptions #conceptScheme-element,
-#AdvancedSearchOptions #allowedConceptScheme-element {
+
+#left-top-panel #conceptScheme-element, #left-top-panel #skosCollection-element,
+#left-top-panel #allowedConceptScheme-element, #AdvancedSearchOptions #conceptScheme-element, 
+#AdvancedSearchOptions #skosCollection-element, #AdvancedSearchOptions #allowedConceptScheme-element {
   background-color: #fff;
   height: 96px;
   width: 90%;
@@ -263,12 +264,14 @@ div#content {
   padding-right: 24px;
   margin-bottom: 9px;
 }
+#left-top-panel #skosCollection-label,
 #left-top-panel #conceptScheme-label,
 #left-top-panel #allowedConceptScheme-label {
   float: left;
   padding-top: 5px;
   padding-right: 5px;
 }
+#left-top-panel #skosCollection-element,
 #left-top-panel #conceptScheme-element,
 #left-top-panel #allowedConceptScheme-element {
   margin-left: 0px;
@@ -481,46 +484,51 @@ div#right-panel-tab-links ul.tab-links li:last-child.active a {
   font-weight: bold;
 }
 
+#concept-view-skosCollection-tabs,
 #concept-view-scheme-tabs,
 #concept-view-language-tabs {
   background-color: #eeeeee;
 }
 
+//#concept-view-skosCollection-tabs,
 #concept-view-scheme-tabs {
   margin-bottom: 14px;
 }
 
+#tab-links-collection,
 #tab-links-language,
 #tab-links-scheme {
-  padding: 6px 0px 0px 0px;
+  padding: 0px 0px 0px 0px;
   margin: 0px;
-  height: 23px;
+  min-height: 23px;
   border-top: 1px solid #bababa;
   border-right: 1px solid #bababa;
   border-left: 1px solid #bababa;
   border-bottom: 1px solid #666;
 }
 #tab-links-language .concept-tab-link,
-#tab-links-scheme .concept-tab-link {
+#tab-links-scheme .concept-tab-link,
+#tab-links-collection .concept-tab-link {
   display: inline;
   margin-right: -4px !important;
+  line-height: 25px;
 }
 #tab-links-language .concept-tab-link a,
-#tab-links-scheme .concept-tab-link a {
-  border-right: 1px solid #bababa;
-  padding: 6px 8px 8px 8px;
+#tab-links-scheme .concept-tab-link a,
+#tab-links-collection .concept-tab-link a {
+  border: 1px solid #bababa;
+  margin: 2px 4px 2px 4px;
+  padding: 0 2px 0 2px;
   color: #333;
   text-decoration: none;
 }
 #tab-links-language .concept-tab-link a:hover,
 #tab-links-language .concept-tab-link.active a,
 #tab-links-scheme .concept-tab-link a:hover,
-#tab-links-scheme .concept-tab-link.active a {
-  border-top: 1px solid #666;
-  border-left: 1px solid #666;
-  border-right: 1px solid #666;
-  padding-bottom: 9px;
-  margin-left: -1px;
+#tab-links-scheme .concept-tab-link.active a,
+#tab-links-collection .concept-tab-link a:hover,
+#tab-links-collection .concept-tab-link.active a {
+  border: 1px solid #666;
   background-color: #fff;
 }
 
@@ -1517,7 +1525,7 @@ ul#history-list > li > ul > li > ul > li > ul > li > ul > li > ul > li > ul > li
 #concept-edit-form #concept-edit-tabs .multi-field-hidden,
 #concept-scheme-edit-form #concept-edit-tabs .multi-field-hidden {
   padding: 2px 0px 0px 0px;
-  height: 27px;
+  min-height: 27px;
   border-top: 1px solid #bababa;
   border-right: 1px solid #bababa;
   border-left: 1px solid #bababa;
@@ -1526,9 +1534,9 @@ ul#history-list > li > ul > li > ul > li > ul > li > ul > li > ul > li > ul > li
 }
 #concept-edit-form #concept-edit-tabs .concept-multi-hidden-template,
 #concept-scheme-edit-form #concept-edit-tabs .concept-multi-hidden-template {
-  margin-right: -4px !important;
-  border-right: 1px solid #bababa;
-  padding: 6px 8px 8px 8px;
+  border: 1px solid #bababa;
+  margin: 0 3px 0 3px;
+  line-height: 27px;
   color: #333;
   text-decoration: none;
 }
@@ -1536,11 +1544,7 @@ ul#history-list > li > ul > li > ul > li > ul > li > ul > li > ul > li > ul > li
 #concept-edit-form #concept-edit-tabs .concept-multi-hidden-template.isOpen,
 #concept-scheme-edit-form #concept-edit-tabs .concept-multi-hidden-template.isHover,
 #concept-scheme-edit-form #concept-edit-tabs .concept-multi-hidden-template.isOpen {
-  border-top: 1px solid #666;
-  border-left: 1px solid #666;
-  border-right: 1px solid #666;
-  padding-bottom: 9px;
-  margin-left: -1px;
+  border: 1px solid #666;
   background-color: #fff !important;
 }
 #concept-edit-form #concept-edit-tabs .concept-multi-hidden-label,
@@ -1654,6 +1658,7 @@ ul#history-list > li > ul > li > ul > li > ul > li > ul > li > ul > li > ul > li
 }
 #concept-edit-form #conceptPropertyContent,
 #concept-scheme-edit-form #conceptPropertyContent {
+    display: none;
   width: 80%;
 }
 #concept-edit-form #concept-edit-right label[for=baseUri],

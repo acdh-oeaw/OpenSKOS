@@ -53,9 +53,11 @@ class Editor_Forms_Search extends Zend_Form
         $user = OpenSKOS_Db_Table_Users::requireFromIdentity();
 
         if ($user->disableSearchProfileChanging) {
+        	$this->buildAllowedSkosCollections();
             $this->buildAllowedConceptScheme();
         } else {
-            $this->buildConceptScheme();			
+        	$this->buildSkosCollection();
+          $this->buildConceptScheme();			
         }
 
         $this->buildSearchProfiles();
@@ -115,7 +117,7 @@ class Editor_Forms_Search extends Zend_Form
 
         $apiClient = new Editor_Models_ApiClient();
         $conceptSchemes = $apiClient->getAllConceptSchemeUriTitlesMap(null, $inCollections);
-
+        
         $selectedConceptSchemes = array();
         if (isset($userOptions['conceptScheme'])) {
             $selectedConceptSchemes = $userOptions['conceptScheme'];
@@ -127,6 +129,33 @@ class Editor_Forms_Search extends Zend_Form
             'value' => $selectedConceptSchemes
         ));
         return $this;
+    }
+    
+    protected function buildSkosCollection()
+    {
+    	$loggedUser = OpenSKOS_Db_Table_Users::requireFromIdentity();
+    	$userForSearch = $this->getUserForSearch();
+    	$userOptions = $userForSearch->getSearchOptions($loggedUser['id'] != $userForSearch['id']);
+    
+    	$inCollections = array();
+    	if (isset($userOptions['collections'])) {
+    		$inCollections = $userOptions['collections'];
+    	}
+    
+    	$apiClient = new Editor_Models_ApiClient();
+    	$skosCollections = $apiClient->getAllSkosCollectionUriTitlesMap(null, $inCollections);
+        
+    	$selectedSkosCollections = array();
+    	if (isset($userOptions['skosCollection'])) {
+    		$selectedSkosCollections = $userOptions['skosCollection'];
+    	}
+    
+    	$this->addElement('multiCheckbox', 'skosCollection', array(
+    			'label' => _('Skos Collection'),
+    			'multiOptions' => $skosCollections,
+    			'value' => $selectedSkosCollections
+    	));
+    	return $this;
     }
 
     protected function buildAllowedConceptScheme()
@@ -168,6 +197,47 @@ class Editor_Forms_Search extends Zend_Form
             'multiOptions' => $allowedConceptSchemes
         ));
         return $this;
+    }
+    
+    protected function buildAllowedSkosCollections()
+    {
+    	$loggedUser = OpenSKOS_Db_Table_Users::requireFromIdentity();
+    	$userForSearch = $this->getUserForSearch();
+    	$userOptions = $userForSearch->getSearchOptions($loggedUser['id'] != $userForSearch['id']);
+    
+    	$allowedSkosCollections = array();
+    	if (isset($userOptions['searchProfileId'])) {
+    		$profilesModel = new OpenSKOS_Db_Table_SearchProfiles();
+    		$profile = $profilesModel->find($userOptions['searchProfileId'])->current();
+    
+    		if (null !== $profile) {
+    			$profileOptions = $profile->getSearchOptions();
+    
+    			$apiClient = new Editor_Models_ApiClient();
+    
+    			$inCollections = array();
+    			if (isset($profileOptions['collections'])) {
+    				$inCollections = $profileOptions['collections'];
+    			}
+    
+    			$skosCollectionsInCollections = $apiClient->getAllSkosCollectionSchemeUriTitlesMap(null, $inCollections);
+
+    			if (!empty($profileOptions['skosCollection'])) {
+    				foreach ($profileOptions['skosCollection'] as $allowedSkosCollectionUri) {
+    					$allowedSkosCollections[$allowedSkosCollectionUri] = $skosCollectionsInCollections[$allowedSkosCollectionUri];
+    				}
+    			} else {
+    				// If we don't have skosCollections checked - then all skosCollections in the collections are allowed.
+    				$allowedSkosCollections = $skosCollectionsInCollections;
+    			}
+    		}
+    	}
+    
+    	$this->addElement('multiCheckbox', 'allowedSkosCollection', array(
+    			'label' => _('Skos Collection'),
+    			'multiOptions' => $allowedSkosCollections
+    	));
+    	return $this;
     }
 
     protected function buildInstantResults()

@@ -1,0 +1,182 @@
+body {
+    color: #333;
+    font-family: Arial,Helvetica,sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+    word-wrap: break-word;
+}
+
+#wrap {
+    margin: 0 auto;
+    width: 1200px;
+}
+
+#logo {
+    padding: 8px 0 0 100px;
+}
+
+.button{
+background: none repeat scroll 0 0 #004069;
+    border: 1px solid #005f9c;
+    border-radius: 6px;
+    box-shadow: 0 0 0 0 #000;
+    color: #fff;
+    cursor: pointer;
+    display: inline-block;
+    margin: 0;
+    padding: 0 6px;
+    text-align: center;
+    text-decoration: none;
+    text-shadow: 0 0 0 #000;
+    vertical-align: top;
+    font-size:12px;
+}
+
+#header {
+    background-color: #004069;
+    background-image: linear-gradient(#004b7b, #003556);
+    background-repeat: no-repeat;
+    border-bottom: 1px solid #004069;
+    border-top: 1px solid #004069;
+    box-shadow: 1px 3px 5px 3px #ccc;
+    height: 50px;
+}
+#header h1 {
+    color: #ffffff;
+    float: left;
+    font-family: Georgia,Times,"Times New Roman",serif;
+    font-size: 22px;
+    font-weight: normal;
+    letter-spacing: 1px;
+    padding: 1px 0 1px 10px;
+}
+#header h2 {
+    color: #ffffff;
+    float: left;
+    font-family: Georgia,Times,"Times New Roman",serif;
+    font-size: 130%;
+    font-weight: normal;
+    padding: 4px 0 1px 20px;
+}
+
+h1 {
+	color: #FF0000;
+}
+
+input.text {
+  border: 1px solid #000000;
+  font-size: 120%;
+}
+
+
+
+table.list {
+	border-collapse: collapse;
+}
+
+table.list td {
+	vertical-align: top;
+}
+
+table.list td.item {
+	border-style: none;
+	
+}
+
+.item{
+font-size: 80%;
+}
+
+strong{
+color:#04214a;
+}
+
+table.list tr.title td {
+	font-weight: bold;
+	color:#04214a;
+	font-size: 90%;
+}
+
+table.list td.fieldname {
+	color: #555555;
+}
+
+td.count {
+	text-align: right;
+	font-size: 80%;
+}
+
+.odd{
+background-color: #DDD;
+}
+
+
+
+.resultList tr td{
+font-size: 90%;
+padding: 5px 10px;
+}
+
+.resultList tr td a:link, a:visited{
+text-decoration: none;
+font-weight: bold;
+color: #225;
+}
+
+.resultList tr td a:hover{
+text-decoration: underline;
+}
+
+div.searchbox, div.clearFacetsTable {
+	border-style: solid;
+	border-width: 1px;
+	border-color: #0000FF;
+	background: #FFFFFF;
+	margin: 0 3px 5px 3px;
+	padding: 2px;
+}
+
+div.facetbox{
+width: 250px;
+background-color: #eef;
+    border: 1px solid #556;
+    border-radius: 10px;
+    box-shadow: 5px 5px 3px #888888;
+    padding: 0 10px 10px 10px;
+    font-size: 80%;
+}
+
+div.facetbox p{
+margin:10px 0 0 0;
+}
+
+div.facetbox td.item, 
+div.searchbox td.item {
+	padding-left: 20px;
+}
+
+div.facetbox td.item input, 
+div.searchbox td.item input {
+  margin-left: -20px;
+}
+
+#results{
+padding-left:22px;
+}
+
+a.clearFields {
+	font-weight: bold;
+}
+
+a.clearFacets {
+	font-weight: bold;
+}
+
+table.facetItem {
+	width: 100%;
+}
+
+table.facetItem td {
+	border-style: none;
+}
+

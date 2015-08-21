@@ -45,7 +45,8 @@ class Editor_Forms_Concept extends OpenSKOS_Form
 		$this->buildHeader()
 		->buildTabsControl()
 		->buildLanguageTabs()
-		->buildSchemeTabs();
+		->buildSchemeTabs()
+                ->buildCollectionTabs();
 	}
 	
 	/**
@@ -160,8 +161,13 @@ class Editor_Forms_Concept extends OpenSKOS_Form
 		$this->addElement($languageTabs);
 
 		$schemeTabs = new OpenSKOS_Form_Element_Multihidden('inScheme');
-		$schemeTabs->setCssClasses(array('concept-form-right'));
+		$schemeTabs->setCssClasses(array('concept-form-right','concept-form-scheme'));
 		$this->addElement($schemeTabs);
+		
+                
+		$collsTabs = new OpenSKOS_Form_Element_Multihidden('inSkosCollection');
+		$collsTabs->setCssClasses(array('concept-form-right','concept-form-skosCollection'));
+		$this->addElement($collsTabs);
 		
 		$editorOptions = Zend_Controller_Front::getInstance()->getParam('bootstrap')->getOption('editor');
 		$languages = $editorOptions['languages'];
@@ -177,6 +183,17 @@ class Editor_Forms_Concept extends OpenSKOS_Form
 				'label' => 'Add',
 				'decorators' => array('ViewHelper')));
 		
+		
+		$this->addElement('select', 'skosCollectionSelect', array(
+				'label' => 'Select a skos collection',
+				'decorators' => array('ViewHelper'),
+				'registerInArrayValidator' => false
+			));
+		
+		$this->addElement('submit', 'skosCollectionOk', array(
+				'label' => 'Add',
+				'decorators' => array('ViewHelper')));
+		
 		$this->addElement('select', 'conceptSchemeSelect', array(
 				'label' => 'Select a concept scheme',
 				'decorators' => array('ViewHelper'),
@@ -187,7 +204,6 @@ class Editor_Forms_Concept extends OpenSKOS_Form
 				'label' => 'Add',
 				'decorators' => array('ViewHelper')));
 		
-		
 		$this->addDisplayGroup(
 				array('conceptLanguageSelect', 'conceptLanguageOk'),
 				'concept-language-overlay',
@@ -197,6 +213,14 @@ class Editor_Forms_Concept extends OpenSKOS_Form
 						'decorators'=> array('FormElements', array('HtmlTag', array('tag' => 'div', 'id' => 'concept-language-settings', 'class' => 'do-not-show')))));
 
 		$this->addDisplayGroup(
+				array('skosCollectionSelect', 'skosCollectionOk'),
+				'skos-collection-overlay',
+				array(
+						'legend' => 'header',
+						'disableDefaultDecorators'=> true,
+						'decorators'=> array('FormElements', array('HtmlTag', array('tag' => 'div', 'id' => 'skos-collection-settings', 'class' => 'do-not-show')))));
+		
+		$this->addDisplayGroup(
 				array('conceptSchemeSelect', 'conceptSchemeOk'),
 				'concept-scheme-overlay',
 				array(
@@ -205,7 +229,7 @@ class Editor_Forms_Concept extends OpenSKOS_Form
 						'decorators'=> array('FormElements', array('HtmlTag', array('tag' => 'div', 'id' => 'concept-scheme-settings', 'class' => 'do-not-show')))));
 		
 		$this->addDisplayGroup(
-				array('conceptLanguages', 'inScheme'),
+				array('conceptLanguages', 'inSkosCollection', 'inScheme'),
 				'concept-tabs',
 				array(
 						'legend' => 'header',
@@ -347,6 +371,22 @@ class Editor_Forms_Concept extends OpenSKOS_Form
 	}
 	
 	/**
+	 * @return Editor_Forms_Concept
+	 */	
+	protected function buildCollectionTabs()
+	{
+		$this->addElement('hidden', 'wrapRightTop', array(
+				'decorators' => array('ViewHelper', array('HtmlTag', array('tag' => 'div', 'id' => 'concept-edit-right', 'openOnly'  => true)))
+		));
+		
+		$this->addElement('hidden', 'wrapRightBottom', array(
+				'decorators' => array('ViewHelper', array('HtmlTag', array('tag' => 'div', 'closeOnly'  => true)))
+		));
+		
+		return $this;
+	}
+
+        /**
 	 * Straight forward - mapping properties section.
 	 * @return Editor_Forms_Concept
 	 */
@@ -374,6 +414,8 @@ class Editor_Forms_Concept extends OpenSKOS_Form
 		return array(
 				'conceptLanguages',
 				'conceptSchemes',
+                                'skosCollections',
+                                'skosCollectionSelect',
 				'conceptLanguageSelect',
 				'conceptSchemeSelect',
 				'wrapLeftTop',

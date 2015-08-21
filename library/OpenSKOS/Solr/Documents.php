@@ -56,6 +56,15 @@ class OpenSKOS_Solr_Documents implements Countable, Iterator
     	return isset($this->documents[$this->position]);
     }
     
+    /**
+     * @param $array an array of OpenSKOS_Solr_Document to add
+     */
+    public function addAll($array) {
+    	foreach ($array as $doc) {
+    		self::add($doc);
+    	}
+    }
+    
     public function add(OpenSKOS_Solr_Document $document)
     {
     	$this->documents[] = $document;

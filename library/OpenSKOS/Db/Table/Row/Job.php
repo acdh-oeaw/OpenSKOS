@@ -24,10 +24,12 @@ class OpenSKOS_Db_Table_Row_Job extends Zend_Db_Table_Row
 	const STATUS_ERROR = 'ERROR';
 	const STATUS_SUCCESS = 'SUCCESS';
 	
+	const JOB_TASK_IMPORT_ISOCAT = 'import_isocat';
 	const JOB_TASK_IMPORT = 'import';
 	const JOB_TASK_EXPORT = 'export';
 	const JOB_TASK_HARVEST = 'harvest';
 	const JOB_TASK_DELETE_CONCEPT_SCHEME = 'delete_concept_scheme';
+	const JOB_TASK_DELETE_SKOS_COLLECTION = 'delete_skos_collection'; // NOTE: Martin Snijders, no support to create or do this job yet !
 	
 	protected $parametersSerialized = null;
 	
@@ -69,7 +71,7 @@ class OpenSKOS_Db_Table_Row_Job extends Zend_Db_Table_Row
 		
 	public function delete()
 	{
-		if ($this->task == self::JOB_TASK_IMPORT) {
+		if ($this->task == self::JOB_TASK_IMPORT or $this->task == self::JOB_TASK_IMPORT_ISOCAT) {
 			$params = $this->getParams();
 			if (!@unlink($params['destination'] .'/'.$params['name'])) {
 				throw new Zend_Db_Table_Row_Exception(_('Failed to delete file').' `'.$params['name'].'`');

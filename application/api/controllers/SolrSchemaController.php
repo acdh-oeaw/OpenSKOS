@@ -34,6 +34,10 @@ class Api_SolrSchemaController extends OpenSKOS_Rest_Controller {
 	{
 		echo Zend_Registry::get('OpenSKOS_Solr')->getSchema(false);
 	}
+	
+	public function headAction() {
+		$this->_501('HEAD');
+	}
 
 	public function getAction() {
 		$this->_501('GET');

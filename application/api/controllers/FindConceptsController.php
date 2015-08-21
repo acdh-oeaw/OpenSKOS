@@ -34,12 +34,16 @@ class Api_FindConceptsController extends OpenSKOS_Rest_Controller {
 			$this->getRequest()->getParams()
 		);
 		$this->_helper->contextSwitch()
-			->initContext($this->getRequestedFormat());
+			->initContext($this->getRequest()->getParam('format', 'rdf'));
 		
 		if('html' == $this->_helper->contextSwitch()->getCurrentContext()) {
 			//enable layout:
 			$this->getHelper('layout')->enableLayout();
 		}
+	}
+	
+	public function headAction() {
+		
 	}
 	
 	public function indexAction() {
@@ -70,8 +74,10 @@ class Api_FindConceptsController extends OpenSKOS_Rest_Controller {
 
 	public function getAction() {
 		
-		$concept = $this->_fetchConcept();
-                $context = $this->_helper->contextSwitch()->getCurrentContext();
+		
+		$concept = $this->_fetchConcept();		
+    $context = $this->_helper->contextSwitch()->getCurrentContext();
+		
 		if ($context == 'json' || $context == 'jsonp') {
 			if (null !== $concept) {
 				foreach ($concept as $key => $var) {
@@ -107,7 +113,11 @@ class Api_FindConceptsController extends OpenSKOS_Rest_Controller {
 	 */
 	protected function _fetchConcept()
 	{
-		$id = $this->getRequest()->getParam('id');
+	
+		if(!$id = $this->getRequest()->getParam('id')) {
+		  $id = preg_replace("/^(.*?)find\-concepts\//","",$_SERVER["REQUEST_URI"]);
+		}		
+		
 		if (null === $id) {
 			throw new Zend_Controller_Exception('No id `'.$id.'` provided', 400);
 		}
@@ -130,10 +140,12 @@ class Api_FindConceptsController extends OpenSKOS_Rest_Controller {
                 
                 $id_prefix = $this->getRequest()->getParam('id_prefix');
                 if (null!==$id_prefix && !OpenSKOS_Solr::isValidUuid($id)) {
-                    $id_prefix  = str_replace('%tenant%', $this->getRequest()->getParam('tenant'), $id_prefix );
+         			$id_prefix  = str_replace('%tenant%', $this->getRequest()->getParam('tenant'), $id_prefix );
                     $id = $id_prefix . $id;
                 }
 		
+                
+                
         // Tries to find any not deleted concept.
 		$concept = $this->model->getConcept($id);
 		
@@ -145,6 +157,7 @@ class Api_FindConceptsController extends OpenSKOS_Rest_Controller {
 		if (null === $concept) {
 			throw new Zend_Controller_Exception('Concept `'.$id.'` not found', 404);
 		}
+			
 		if ($concept->isDeleted()) {
 			throw new Zend_Controller_Exception('Concept `'.$id.'` is deleted since '.$concept['timestamp'], 410);
 		}

@@ -198,6 +198,53 @@ class OpenSKOS_Controller_Editor extends Zend_Controller_Action
 											'resource' => 'editor.concept-schemes'
 									),
 								)
+							),
+							array(
+									'label'  => 'Manage skos collections',
+									'action' => 'index',
+									'module' => 'editor',
+									'controller' => 'skos-collection',
+									'resource' => 'editor.skos-collections',
+									'privilege' => 'index',
+									'pages' => array(
+											array(
+													'label'  => 'Create',
+													'action' => 'create',
+													'module' => 'editor',
+													'controller' => 'skos-collection',
+													'resource' => 'editor.skos-collections',
+													'privilege' => 'create'
+											),
+											array(
+													'label'  => 'Delete',
+													'action' => 'delete',
+													'module' => 'editor',
+													'controller' => 'skos-collection',
+													'resource' => 'editor.skos-collections',
+													'privilege' => 'delete'
+											),
+											array(
+													'label'  => 'Manage icons',
+													'action' => 'show-icons',
+													'module' => 'editor',
+													'controller' => 'skos-collection',
+													'resource' => 'editor.skos-collections'
+											),
+											array(
+													'label'  => 'Upload icon',
+													'action' => 'upload-icon',
+													'module' => 'editor',
+													'controller' => 'skos-collection',
+													'resource' => 'editor.skos-collections'
+											),
+											array(
+													'label'  => 'Delete icon',
+													'action' => 'delete-icon',
+													'module' => 'editor',
+													'controller' => 'skos-collection',
+													'resource' => 'editor.skos-collections'
+											),
+									)
 							)
 						)
 					)

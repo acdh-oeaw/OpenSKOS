@@ -34,14 +34,14 @@ class Editor_Models_ConceptScheme extends Api_Models_Concept
 		parent::__construct(array_merge($copyFrom->getData(), array('class' => 'ConceptScheme')));
 	}
 	
-	public function save($extraData = null, $commit = true)
+	public function save($extraData = null, $commit = true, $newCreated = false)
 	{
 		/* The concepts relations is implemented but needs to be tested. Its not needed for now.
 		$this->updateRelatedConcepts($extraData['includeConcepts']);
 		unset($extraData['includeConcepts']);
 		*/
 		
-		parent::save($extraData, $commit);
+		parent::save($extraData, $commit, $newCreated);
 	}
 	
 	/**
