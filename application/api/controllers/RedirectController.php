@@ -49,7 +49,6 @@ class Api_RedirectController extends Zend_Controller_Action
 		), 'rest', true);
 		switch ($this->getRequest()->getParam('format')) {
 			case 'json':
-			case 'jsonp':
 			case 'html':
 				$uri .= '.' . $this->getRequest()->getParam('format');
 				break;

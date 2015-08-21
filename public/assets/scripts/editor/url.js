@@ -38,6 +38,18 @@ EditorUrl = new Class({
 			if (this._params.search !== undefined) {
 				Editor.Search.searchForm.getElement('[name=searchText]').set('value', this._params.search);
 				doSearch = true;
+			}		
+			if (this._params.scheme !== undefined) {
+				var checkedSchemes = this._params.scheme.split(',');
+				Editor.Search.searchForm.getElements('[name="conceptScheme[]"]').each(function (el) {
+					if (checkedSchemes.contains(el.get('value'))) {
+						el.setProperty('checked', 'checked');
+					} else {
+						el.removeProperty('checked');
+					}
+				});
+				
+				doSearch = true;
 			}
 			if (this._params.user !== undefined) {
 				Editor.Search.searchForm.getElement('[name=user]').set('value', this._params.user);

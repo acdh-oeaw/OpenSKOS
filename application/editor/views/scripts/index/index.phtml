@@ -24,9 +24,7 @@
 
 <?php $this->placeholder('lefttoppanel')->captureStart();?>
 <?php echo $this->searchForm;?>
-<?php if (! $this->disableSearchProfileChanging): ?>
-	<a id="advanced-options-link" title="<?php  echo $this->translate('Show advanced search options')?>" href="<?php echo $this->url(array('controller' => 'search', 'action' => 'show-form'))?>"></a>
-<?php endif?>
+<a id="advanced-options-link" title="<?php  echo $this->translate('Show advanced search options')?>" href="<?php echo $this->url(array('controller' => 'search', 'action' => 'show-form'))?>"></a>
 <?php $this->placeholder('lefttoppanel')->captureEnd() ?>
 
 <?php $this->placeholder('leftbottompanel')->captureStart();?>
@@ -44,7 +42,7 @@
 	<div class="no-results-no-search-string" style="display:none;">
 		<?php echo $this->translate('No results found.')?>
 	</div>
-	<div class="errors" style="display:none;"><?php echo $this->translate('Unknown error occurred.')?></div>
+	<div class="errors" style="display:none;"></div>
 	<div class="actions" style="display:none;">
 		<button class="add-all-to-selection selection" href="#"><?php echo $this->translate('Add to selection')?></button>
 		<button class="export-search export" href="#"><?php echo $this->translate('Export'); ?></button>

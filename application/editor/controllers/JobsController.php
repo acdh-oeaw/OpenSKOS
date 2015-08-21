@@ -44,6 +44,17 @@ class Editor_JobsController extends OpenSKOS_Controller_Editor
 		
 		$job = $this->_getJob();
 		
+		if ($job->task == OpenSKOS_Db_Table_Row_Job::JOB_TASK_EXPORT) {			
+			$editorOptions = OpenSKOS_Application_BootstrapAccess::getOption('editor');			
+			if (isset($editorOptions['export']['filesHttpPath'])) {
+				$exportHttpPath = $editorOptions['export']['filesHttpPath'];
+			} else {
+				$exportHttpPath = '/data/export';
+			}
+			$exportHttpPath = rtrim($exportHttpPath, '/') . '/';
+			$this->view->assign('exportHttpPath', $exportHttpPath);
+		}
+		
 		$this->view->assign('job', $job);
 		$this->view->assign('collection', $job->getCollection());
 		$this->view->assign('user', $job->getUser());
@@ -76,21 +87,6 @@ class Editor_JobsController extends OpenSKOS_Controller_Editor
 			$this->getHelper('FlashMessenger')->addMessage(_('Job removed'));
 		}
 		$this->_helper->redirector('index');
-	}
-	
-	public function downloadExportAction()
-	{
-		$this->_requireAccess('editor.jobs', 'index');
-		
-		$job = $this->_getJob();
-		
-		$export = new Editor_Models_Export();
-		$export->setSettings($job->getParams());
-		
-		$fileDetails = $export->getExportFileDetails();
-		$filePath = $export->getExportFilesDirPath() . $job->info;
-		
-		$this->getHelper('file')->sendFile($fileDetails['fileName'], $filePath, $fileDetails['mimeType']);
 	}
 	
 	/**

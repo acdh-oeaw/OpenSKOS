@@ -37,7 +37,7 @@ class Editor_Models_ConceptValidator_UnneededDirectNarrowers extends Editor_Mode
 	/**
 	 * @see Editor_Models_ConceptValidator::validate($concept)
 	 */
-	public function isValid(Editor_Models_Concept $concept, $extraData)
+	public function isValid(Editor_Models_Concept $concept)
 	{
 		$this->_setField('broader');
 		

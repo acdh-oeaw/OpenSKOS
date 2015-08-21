@@ -32,15 +32,8 @@ class Editor_ConceptController extends OpenSKOS_Controller_Editor
 		$this->_helper->_layout->setLayout('editor_central_content');
 		
 		$notation = OpenSKOS_Db_Table_Notations::getNext();
-		
-		$initialLanguage = Zend_Registry::get('Zend_Locale')->getLanguage();		
-		$editorOptions = Zend_Controller_Front::getInstance()->getParam('bootstrap')->getOption('editor');
-		if (! empty($editorOptions['languages']) && ! in_array($initialLanguage, $editorOptions['languages'])) { // If the browser language is supported
-			$initialLanguage = key($editorOptions['languages']);
-		}
-		
 		$concept = new Editor_Models_Concept(new Api_Models_Concept(array(
-				'prefLabel@'.$initialLanguage => array($this->getRequest()->getParam('label')),
+				'prefLabel@'.Zend_Registry::get('Zend_Locale')->getLanguage() => array($this->getRequest()->getParam('label')),
 				'notation' => array($notation)
 		)));
 		
@@ -84,14 +77,10 @@ class Editor_ConceptController extends OpenSKOS_Controller_Editor
 			$formData = $concept->toForm();			
 			$formData = array_merge($formData, $extraData);
 			
-			$formData['notation'] = $this->getRequest()->getPost('notation');
-			$formData['uri'] = $this->getRequest()->getPost('uri');
-			if ($form->getIsCreate()) {				
+			if ($form->getIsCreate()) {
 				$formData['baseUri'] = $this->getRequest()->getPost('baseUri');
 			}
 		}
-		
-		
 		
 		$form->reset();
 		$form->populate($formData);
@@ -159,7 +148,7 @@ class Editor_ConceptController extends OpenSKOS_Controller_Editor
 			
 			//by reference.
 			$extraData = $concept->transformFormData($formData);
-			$concept->setConceptData($formData, $extraData);
+			$concept->setConceptData($formData);
 			
 			try {
 				
@@ -171,6 +160,16 @@ class Editor_ConceptController extends OpenSKOS_Controller_Editor
 						'modified_timestamp' =>  date("Y-m-d\TH:i:s\Z"),
 						'toBeChecked' => (isset($extraData['toBeChecked']) ? (bool)$extraData['toBeChecked'] : false))
 				);
+				
+				if (($concept['status'] !== 'approved') && ($extraData['status'] === 'approved')) {
+					$extraData['approved_timestamp'] = $extraData['modified_timestamp'];
+					$extraData['approved_by'] = $extraData['modified_by'];
+				} else if ($concept['status'] !== 'candidate') {
+					if (isset($oldData['approved_timestamp']) && isset($oldData['approved_by'])) { 
+						$extraData['approved_timestamp'] = $oldData['approved_timestamp'];
+						$extraData['approved_by'] = $oldData['approved_by'];
+					}
+				}
 				
 				if ( ! isset($extraData['uuid']) || empty($extraData['uuid'])) {					
 					$extraData['uuid'] = $concept['uuid'];
@@ -186,37 +185,6 @@ class Editor_ConceptController extends OpenSKOS_Controller_Editor
 					if (isset($oldData['collection'])) {
 						$extraData['collection'] = $oldData['collection'];
 					}
-					if (isset($oldData['approved_by'])) {
-						$extraData['approved_by'] = $oldData['approved_by'];
-					}
-					if (isset($oldData['approved_timestamp'])) {
-						$extraData['approved_timestamp'] = $oldData['approved_timestamp'];
-					}
-					if (isset($oldData['deleted_by'])) {
-						$extraData['deleted_by'] = $oldData['deleted_by'];
-					}
-					if (isset($oldData['deleted_timestamp'])) {
-						$extraData['deleted_timestamp'] = $oldData['deleted_timestamp'];
-					}
-				}
-				
-				if ($extraData['status'] === 'approved' && $oldData['status'] !== 'approved') {
-					$extraData['approved_timestamp'] = $extraData['modified_timestamp'];
-					$extraData['approved_by'] = $extraData['modified_by'];
-				}
-				
-				if ($extraData['status'] !== 'approved') {
-					$formData['approved_by'] = '';
-					$formData['approved_timestamp'] = '';
-					$extraData['approved_by'] = '';
-					$extraData['approved_timestamp'] = '';
-				}
-				
-				if ($extraData['status'] !== 'expired') {
-					$formData['deleted_by'] = '';
-					$formData['deleted_timestamp'] = '';
-					$extraData['deleted_by'] = '';
-					$extraData['deleted_timestamp'] = '';
 				}
 				
 				if ( ! isset($extraData['collection'])) {
@@ -292,7 +260,16 @@ class Editor_ConceptController extends OpenSKOS_Controller_Editor
 		
 		$concept = $this->_getConcept();
 		
-		if ( ! $concept->hasAnyRelations()) {
+		// Check if the concept has any relation associated.
+		$hasAnyRelation = false;
+		$allSemanticRelations = $concept->getRelationsArray(Api_Models_Concept::$classes['SemanticRelations'], null, array($concept, 'getAllRelations'));
+		$allMappingRelations = $concept->getRelationsArray(Api_Models_Concept::$classes['MappingProperties'], null, array($concept, 'getAllMappings'));;
+		$allRealations = array_merge($allSemanticRelations, $allMappingRelations);
+		foreach ($allRealations as $relations) {
+			$hasAnyRelation |= ( ! empty($relations));
+		}
+		
+		if ( ! $hasAnyRelation) {
 			$concept->delete(true);
 			$this->getHelper('json')->sendJson(array('status' => 'ok'));
 		} else {
@@ -350,12 +327,19 @@ class Editor_ConceptController extends OpenSKOS_Controller_Editor
 			case 'search' : {
 				$searchFormData = Zend_Json::decode($this->getRequest()->getPost('additionalData'), Zend_Json::TYPE_ARRAY); // We have the json encoded search form data in additionalData.
 
-				$searchFormData = $this->_fixJsSerializedArrayData('conceptScheme', $searchFormData);
-				$searchFormData = $this->_fixJsSerializedArrayData('allowedConceptScheme', $searchFormData);
+				// Fix conceptScheme[] which is not serialized correctly.
+				if (isset($searchFormData['conceptScheme[]'])) {
+					if (is_array($searchFormData['conceptScheme[]'])) {
+						$searchFormData['conceptScheme'] = $searchFormData['conceptScheme[]'];
+					} else {
+						$searchFormData['conceptScheme'] = array($searchFormData['conceptScheme[]']);
+					}
+					unset($searchFormData['conceptScheme[]']);
+				}
 				
 				$userForSearch = OpenSKOS_Db_Table_Users::requireById($searchFormData['user']);
 				$userSearchOptions = $userForSearch->getSearchOptions($user['id'] != $userForSearch['id']);
-				$export->set('searchOptions', Editor_Forms_Search::mergeSearchOptions($searchFormData, $userSearchOptions));
+				$export->set('searchOptions', array_merge($searchFormData, $userSearchOptions));
 			} break;
 		}
 		
@@ -365,7 +349,7 @@ class Editor_ConceptController extends OpenSKOS_Controller_Editor
 		} else {
 			$fileContent = $export->exportToString();			
 			$fileDetails = $export->getExportFileDetails();			
-			$this->getHelper('file')->sendFileContent($fileDetails['fileName'], $fileContent, $fileDetails['mimeType']);
+			$this->getHelper('file')->sendFile($fileDetails['fileName'], $fileContent, $fileDetails['mimeType']);
 		}
 	}
 	
@@ -498,23 +482,5 @@ class Editor_ConceptController extends OpenSKOS_Controller_Editor
 				$this->_helper->redirector('view', 'concept', 'editor', array('uuid' => $this->getRequest()->getParam('uuid')));
 			}
 		}
-	}
-	
-	/**
-	 * Fix key[] which is not serialized correctly.
-	 * @param array $key
-	 * @param array $data
-	 */
-	protected function _fixJsSerializedArrayData($key, $data)
-	{
-		if (isset($data[$key . '[]'])) {
-			if (is_array($data[$key . '[]'])) {
-				$data[$key] = $data[$key . '[]'];
-			} else {
-				$data[$key] = array($data[$key . '[]']);
-			}
-			unset($data[$key . '[]']);
-		}
-		return $data;
 	}
 }

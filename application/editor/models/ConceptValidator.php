@@ -50,10 +50,9 @@ abstract class Editor_Models_ConceptValidator
 	 * Validates the validated concept
 	 * 
 	 * @param Editor_Models_Concept $concept
-	 * @param array Any extra data which will be used on saving.
 	 * @return bool True if the concept is valid. False otherwise
 	 */
-	public abstract function isValid(Editor_Models_Concept $concept, $extraData);
+	public abstract function isValid(Editor_Models_Concept $concept);
 	
 	/**
 	 * Gets the error of the validator.

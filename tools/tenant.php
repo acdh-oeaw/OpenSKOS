@@ -84,8 +84,7 @@ switch ($action) {
 			'name' => $OPTS->name,
 			'password' => new Zend_Db_Expr('MD5('.$model->getAdapter()->quote($password).')'),
 			'tenant' => $OPTS->code,
-			'type' => OpenSKOS_Db_Table_Users::USER_TYPE_BOTH,
-            'role' => OpenSKOS_Db_Table_Users::USER_ROLE_ADMINISTRATOR,
+			'type' => OpenSKOS_Db_Table_Users::USER_TYPE_EDITOR
 		))->save();
 		fwrite(STDOUT, 'A tenant has been created with this user account:'."\n");
 		fwrite(STDOUT, "  - code: {$OPTS->code}\n");

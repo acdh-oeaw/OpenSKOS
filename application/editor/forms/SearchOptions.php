@@ -34,38 +34,15 @@ class Editor_Forms_SearchOptions extends Zend_Form
 		$this->_searchOptions = self::getAvailableSearchOptions();
 		
 		$this->buildSearchProfiles()
-			->buildLanguage()
-			->buildLexicalLabel()
-			->buildStatuses()
-			->buildDocProperties()
-			->buildSimpleElements()
-			->buildUserInteraction()
-			->buildCollections()
-			->buildConceptSchemes();
-			
-		if (! $this->_currentTenant->disableSearchInOtherTenants) {
-			$this->buildTenants();
-		}
-			
-		$this->buildButtons()
-			->buildSaveAsProfile();
-		
-		// If the user is disabled to change search profile - disable all fields.
-		if (OpenSKOS_Db_Table_Users::requireFromIdentity()->disableSearchProfileChanging) {
-			foreach ($this->getElements() as $element) {
-				$element->setAttrib('disabled', true);
-			}
-		}
-	}
-	
-	public function isValid($data)
-	{
-		// If the user is disabled to change search profile he can not change any search settings.
-		if (OpenSKOS_Db_Table_Users::requireFromIdentity()->disableSearchProfileChanging) {
-			$this->addError(_('You are not allowed to change your detailed search options.'));
-		}
-		
-		return parent::isValid($data);
+		->buildLanguage()
+		->buildLexicalLabel()
+		->buildStatuses()
+		->buildDocProperties()
+		->buildSimpleElements()
+		->buildUserInteraction()
+		->buildTenants()
+		->buildButtons()
+		->buildSaveAsProfile();
 	}
 	
 	/**
@@ -303,41 +280,6 @@ class Editor_Forms_SearchOptions extends Zend_Form
 		$this->getElement('tenants')->setValue(array($this->_getCurrentTenant()->code));
 		return $this;
 	}
-	
-	/**
-	 * @return Editor_Forms_SearchOptions
-	 */
-	protected function buildCollections()
-	{
-		$modelCollections = new OpenSKOS_Db_Table_Collections();
-		$collections = $modelCollections->fetchAll($modelCollections->select()->where('tenant = ?', $this->_getCurrentTenant()->code));
-		$collectionsOptions = array();
-		foreach ($collections as $collection) {
-			$collectionsOptions[$collection->id] = $collection->dc_title;
-		}
-		
-		$this->addElement('multiselect', 'collections', array(
-				'label' => _('Collections'),
-				'multiOptions' => $collectionsOptions
-		));
-		
-		return $this;
-	}
-	
-	/**
-	 * @return Editor_Forms_SearchOptions
-	 */
-	protected function buildConceptSchemes()
-	{
-		$apiClient = new Editor_Models_ApiClient();
-		$conceptSchemes = $apiClient->getAllConceptSchemeUriTitlesMap();
-	
-		$this->addElement('multiCheckbox', 'conceptScheme', array(
-			'label' => _('Concept schemes'),
-			'multiOptions' => $conceptSchemes
-		));
-		return $this;
-	}
 
 	/**
 	 * @return Editor_Forms_SearchOptions
@@ -505,10 +447,7 @@ class Editor_Forms_SearchOptions extends Zend_Form
 		if (empty($values['interactionDateTo'])) {
 			$values['interactionDateTo'] = '';
 		}
-		
-		// Unset any disabled input fields.
-		unset($values['userInteractionTypeLabel']);
-		
+				
 		return $values;
 	}
 	

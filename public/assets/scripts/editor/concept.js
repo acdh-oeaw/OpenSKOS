@@ -65,9 +65,7 @@ var EditorConcept = new Class({
 
 		$(document.body).addEvent('click:relay(#conceptSave)', function (e) {
 			e.stop();
-			if (Editor.Concept.confirmDocPropertiesAreSaved()) {
-				Editor.Control.saveConcept();
-			}
+			Editor.Control.saveConcept();
 		});
 		
 		$(document.body).addEvent("click:relay(.delete-concept)", function (e) {
@@ -155,9 +153,7 @@ var EditorConcept = new Class({
 		}
 		
 		var currentLanguage = this._getCurrentLanguage();
-		if ($('conceptPropertySelect')) {
-			$('conceptPropertySelect').getElements('option').show();			
-		}		
+		$('conceptPropertySelect').getElements('option').show();
 		var option = null;
 		
 		//The code below does the following:
@@ -323,7 +319,6 @@ var EditorConcept = new Class({
 						}
 					});
 				});
-				self._removeConceptsBaseUrl(uuid);
 			}
 			self.showSchemeLayer();
 		});	
@@ -373,8 +368,6 @@ var EditorConcept = new Class({
 		
 		SqueezeBox.close();
 		this.showSchemeLayer(uuid);
-		
-		this._addConceptsBaseUrl(uuid);
 		
 		this.toggleConceptSchemeWarning();
 	},
@@ -436,15 +429,6 @@ var EditorConcept = new Class({
 			}
 		}
 		return prefLabelText;
-	},
-	
-	confirmDocPropertiesAreSaved: function () {
-		// If we have content in conceptPropertyContent and conceptPropertySelect is selected - we need to confirm that the user don't want it.
-		if ($('conceptPropertySelect').get('value') !== '' && $('conceptPropertyContent').get('value') !== '') {
-			return confirm($('doc-properties-not-saved-confirmation').get('text'));
-		} else {
-			return true;
-		}
 	},
 	
 	_getOpenTab: function (inputName) {
@@ -534,49 +518,10 @@ var EditorConcept = new Class({
 		});
 	}.protect(),
 	
-	_addConceptsBaseUrl: function (conceptSchemeUuid) {
-		var self = this;
-		new Request.JSON({
-			url: BASE_URL + "/editor/concept-scheme/get-concepts-base-url", 
-			method: 'post',
-			data: {uuid: conceptSchemeUuid},
-			onSuccess: function(result, text) {
-				var baseUriEl = $('concept-edit-form').getElement('#baseUri');
-				if (! baseUriEl.getElement('option[value="' + result.result + '"]')) {
-					$('concept-edit-form').getElement('#baseUri').adopt(
-						new Element('option', {'value': result.result, 'text': result.result})
-					);
-					self._buildUri();
-				}
-			}
-		}).send();
-	}.protect(),
-	
-	_removeConceptsBaseUrl: function (conceptSchemeUuid) {
-		var self = this;
-		new Request.JSON({
-			url: BASE_URL + "/editor/concept-scheme/get-concepts-base-url", 
-			method: 'post',
-			data: {uuid: conceptSchemeUuid},
-			onSuccess: function(result, text) {
-				var baseUriEl = $('concept-edit-form').getElement('#baseUri');
-				var option = baseUriEl.getElement('option[value="' + result.result + '"]');
-				if (option) {
-					option.dispose();
-					self._buildUri();
-				}
-			}
-		}).send();
-	}.protect(),
-	
 	_buildUri: function () {
 		if ($('concept-edit-form').getElement('#baseUri')) {
 			$('concept-edit-form').getElement('#baseUri').addEvent('change', function () {
-				var baseUri = $('concept-edit-form').getElement('#baseUri').get('value');
-				if (baseUri != "" && ! /\/$/.test(baseUri) && ! /=$/.test(baseUri)) {
-					baseUri += '/';
-				}
-				$('concept-edit-form').getElement('#uri').set('value', baseUri + $('concept-edit-form').getElement('#notation').get('value'));
+				$('concept-edit-form').getElement('#uri').set('value', $('concept-edit-form').getElement('#baseUri').get('value') + $('concept-edit-form').getElement('#notation').get('value'));
 			});			
 			$('concept-edit-form').getElement('#baseUri').fireEvent('change');
 		}

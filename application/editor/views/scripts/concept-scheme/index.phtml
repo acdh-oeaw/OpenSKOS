@@ -62,11 +62,7 @@
 				</a>
 			</td>
 			<td>
-				<?php if (isset($this->conceptSchemesWithDeleteJobs[$conceptScheme['uuid']])):?>
-					<a href="<?php echo $this->url(array('controller' => 'jobs', 'action' => 'view', 'job' => $this->conceptSchemesWithDeleteJobs[$conceptScheme['uuid']]))?>" title="<?php echo $this->translate('Go to the delete job details')?>"><?php echo $this->translate('A delete job exists')?></a>
-				<?php else:?>
-					<a class="delete" href="<?php echo $this->url(array('action' => 'delete', 'uuid' => $conceptScheme['uuid']))?>" title="<?php echo $this->translate('Delete')?>"><?php echo $this->translate('Delete concept scheme')?></a>
-				<?php endif?>
+				<a class="delete" href="<?php echo $this->url(array('action' => 'delete', 'uuid' => $conceptScheme['uuid']))?>" title="<?php echo $this->translate('Delete')?>"><?php echo $this->translate('Delete concept scheme')?></a>
 			</td>
 		</tr>
 		<?php endforeach?>

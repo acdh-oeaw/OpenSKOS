@@ -28,7 +28,7 @@ class Editor_Models_ConceptValidator_DuplicateBroaders extends Editor_Models_Con
 	/**
 	 * @see Editor_Models_ConceptValidator::validate($concept)
 	 */
-	public function isValid(Editor_Models_Concept $concept, $extraData)
+	public function isValid(Editor_Models_Concept $concept)
 	{
 		$this->_setField('broader');
 		

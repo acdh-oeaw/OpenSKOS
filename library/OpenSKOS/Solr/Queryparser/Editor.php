@@ -84,11 +84,10 @@ class OpenSKOS_Solr_Queryparser_Editor
 		$this->_parseSearchForText()
 		->_parseSearchForStatus()
 		->_parseSearchForOnlyTopConcepts()
-		->_parseSearchForOnlyOrphanedConcepts()		
+		->_parseSearchForOnlyOrphanedConcepts()
 		->_parseSearchForConceptScheme()
 		->_parseSearchForUserInteraction()
-		->_parseSearchForTenants()
-		->_parseSearchForCollections();
+		->_parseSearchForTenants();
 		
 		// If no search query yet - search for everything
 		if (empty($this->_query)) {
@@ -305,12 +304,8 @@ class OpenSKOS_Solr_Queryparser_Editor
 	protected function _parseSearchForUserInteraction()
 	{
 		$modelUsers = new OpenSKOS_Db_Table_Users();
-		$allUsersRows = $modelUsers->fetchAll($modelUsers->select()->where('tenant=?', $this->_tenant->code))->toArray();
-		$allUsers = array();
-		foreach ($allUsersRows as $userRow) {
-			$allUsers[$userRow['id']] = (isset($userRow['name']) ? $userRow['name'] : $userRow['email']);
-		}
-		
+		$allUsers = $modelUsers->fetchAll($modelUsers->select()->where('tenant=?', $this->_tenant->code))->toArray();
+
 		// Prepare all interaction types for which will search. (created, modified, approved etc.)
 		$searchForInteractionTypes = array();
 		if (isset($this->_searchOptions['userInteractionType']) && ! empty($this->_searchOptions['userInteractionType'])) {
@@ -372,42 +367,6 @@ class OpenSKOS_Solr_Queryparser_Editor
 				$query = '(' . $query . ')';
 			}
 			
-			if ( ! empty($query)) {
-				$this->_addDefaultQuerySeparator();
-				$this->_query .= $query;
-			}
-		}
-	
-		return $this;
-	}
-	
-	/**
-	 * Parses the part of the query for searching for specified collections.
-	 * By default the search is performed for all collections.
-	 *
-	 * @return OpenSKOS_Solr_Queryparser_Editor
-	 */
-	protected function _parseSearchForCollections()
-	{
-		$modelCollections = new OpenSKOS_Db_Table_Collections();
-		$allCollections = $modelCollections->fetchAll($modelCollections->select()->where('tenant = ?', $this->_tenant->code));
-	
-		$searchInCollections = array();
-		if (isset($this->_searchOptions['collections'])) {
-			$searchInCollections = $this->_searchOptions['collections'];
-		}
-		
-		if (! empty($searchInCollections) && count($searchInCollections) != count($allCollections)) {
-			$query = '';
-			foreach ($searchInCollections as $collectionId) {
-				$query .= ( ! empty($query) ? ' OR ' : '');
-				$query .= 'collection:' . $collectionId;
-			}
-				
-			if ( ! empty($query) && count($searchInCollections) > 1) {
-				$query = '(' . $query . ')';
-			}
-				
 			if ( ! empty($query)) {
 				$this->_addDefaultQuerySeparator();
 				$this->_query .= $query;
@@ -499,10 +458,6 @@ class OpenSKOS_Solr_Queryparser_Editor
 			foreach ($searchUsers as $user) {
 				$query .= ( ! empty($query) ? ' OR ' : '');
 				$query .= $field . ':' . $user;
-				if ($field == 'created_by') {
-					$query .= ' OR ';
-					$query .= 'dcterms_creator:"' . $allUsers[$user] . '"';
-				}
 			}
 		}
 

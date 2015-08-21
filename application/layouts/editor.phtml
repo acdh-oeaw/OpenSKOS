@@ -1,4 +1,4 @@
-<?php
+<?php 
 /**
  * OpenSKOS
  *
@@ -39,7 +39,7 @@ $controller = Zend_Controller_Front::getInstance()->getRequest()->getControllerN
 		<script src="<?php echo $baseUrl?>assets/scripts/squeezebox.js"></script>
 		<script type="text/javascript">
 			var BASE_URL = '<?php echo rtrim($this->url(array(), null, true), '/')?>';
-
+			
 			var keepAlive = new Request({method: 'get', url: BASE_URL + '/editor/keepalive'});
 			var sessionTimeout = <?php echo ini_get('session.gc_maxlifetime') - 300 ?>;
 			keepAlive.send.periodical(1000 * sessionTimeout, keepAlive);
@@ -50,33 +50,34 @@ $controller = Zend_Controller_Front::getInstance()->getRequest()->getControllerN
 				}
 			}
 		</script>
-                
-		<?php $scriptsVersion = 5; // Change that if the scripts are changed.?>
-                
-		<link rel="stylesheet" href="<?php echo $baseUrl?>assets/styles/squeezebox/SqueezeBox.css?v=<?php echo $scriptsVersion;?>" type="text/css" media="all" />
-		<link rel="stylesheet" href="<?php echo $baseUrl?>assets/styles/editor.css?v=<?php echo $scriptsVersion;?>" type="text/css" media="all" />
+		<link rel="stylesheet" href="<?php echo $baseUrl?>assets/styles/squeezebox/SqueezeBox.css" type="text/css" media="all" />
+		<link rel="stylesheet" href="<?php echo $baseUrl?>assets/styles/editor.css" type="text/css" media="all" />
 		
 		<?php if ($controller == 'index'):?>
-			<script src="<?php echo $baseUrl?>assets/scripts/editor.js?v=<?php echo $scriptsVersion;?>"></script>
-			<script src="<?php echo $baseUrl?>assets/scripts/editor/search.js?v=<?php echo $scriptsVersion;?>"></script>
-			<script src="<?php echo $baseUrl?>assets/scripts/editor/control.js?v=<?php echo $scriptsVersion;?>"></script>
-			<script src="<?php echo $baseUrl?>assets/scripts/editor/concept.js?v=<?php echo $scriptsVersion;?>"></script>
-			<script src="<?php echo $baseUrl?>assets/scripts/editor/conceptScheme.js?v=<?php echo $scriptsVersion;?>"></script>
-			<script src="<?php echo $baseUrl?>assets/scripts/editor/relations.js?v=<?php echo $scriptsVersion;?>"></script>
-			<script src="<?php echo $baseUrl?>assets/scripts/editor/view.js?v=<?php echo $scriptsVersion;?>"></script>
-			<script src="<?php echo $baseUrl?>assets/scripts/editor/selection.js?v=<?php echo $scriptsVersion;?>"></script>
-			<script src="<?php echo $baseUrl?>assets/scripts/editor/tabs.js?v=<?php echo $scriptsVersion;?>"></script>
-			<script src="<?php echo $baseUrl?>assets/scripts/editor/url.js?v=<?php echo $scriptsVersion;?>"></script>
-			<script src="<?php echo $baseUrl?>assets/scripts/editor/shortcuts.js?v=<?php echo $scriptsVersion;?>"></script>
+			<script src="<?php echo $baseUrl?>assets/scripts/editor.js"></script>
+			<script src="<?php echo $baseUrl?>assets/scripts/editor/search.js?v=1"></script>
+			<script src="<?php echo $baseUrl?>assets/scripts/editor/control.js"></script>
+			<script src="<?php echo $baseUrl?>assets/scripts/editor/concept.js"></script>
+			<script src="<?php echo $baseUrl?>assets/scripts/editor/conceptScheme.js"></script>
+			<script src="<?php echo $baseUrl?>assets/scripts/editor/relations.js"></script>
+			<script src="<?php echo $baseUrl?>assets/scripts/editor/view.js"></script>
+			<script src="<?php echo $baseUrl?>assets/scripts/editor/selection.js"></script>
+			<script src="<?php echo $baseUrl?>assets/scripts/editor/tabs.js"></script>
+			<script src="<?php echo $baseUrl?>assets/scripts/editor/url.js"></script>
+			<script src="<?php echo $baseUrl?>assets/scripts/editor/shortcuts.js"></script>
 		<?php else:?>
-			<script src="<?php echo $baseUrl?>assets/scripts/openskos.js?v=<?php echo $scriptsVersion;?>"></script>
-			<script src="<?php echo $baseUrl?>assets/scripts/forms.js?v=<?php echo $scriptsVersion;?>"></script>
-			<link rel="stylesheet" href="<?php echo $baseUrl?>assets/styles/default.css?v=<?php echo $scriptsVersion;?>" type="text/css" media="all" />
-			<link rel="stylesheet" href="<?php echo $baseUrl?>assets/styles/forms.css?v=<?php echo $scriptsVersion;?>" type="text/css" media="screen" />
+			<script src="<?php echo $baseUrl?>assets/scripts/openskos.js"></script>
+			<script src="<?php echo $baseUrl?>assets/scripts/forms.js"></script>
+			<link rel="stylesheet" href="<?php echo $baseUrl?>assets/styles/default.css" type="text/css" media="all" />
+			<link rel="stylesheet" href="<?php echo $baseUrl?>assets/styles/forms.css" type="text/css" media="screen" />
 		<?php endif?>
-
+		
+		<?php if (isset($_GET['css'])):?>
+			<link rel="stylesheet" href="<?php echo $baseUrl?>interaction_design/themes/clean/css/main.css" type="text/css" media="all" />
+		<?php endif?>
+		
 		<link rel="shortcut icon" href="<?php echo $baseUrl?>assets/images/favicon.ico" />
-
+		
 		<?php
     	echo $this->headMeta();
     	echo $this->headScript();
@@ -95,7 +96,7 @@ $controller = Zend_Controller_Front::getInstance()->getRequest()->getControllerN
 						?>
 			        	<?php echo $this->translate('Aangemeld als')?> <strong><a id="editMyProfile" href="<?php echo $this->url(array('module' => 'editor', 'controller' => 'users', 'action' => 'view', 'user' => $identity->id), 'default', true)?>"><?php echo $identity->name?></a></strong>
 			        	&nbsp;&nbsp;
-			        	<a id="logout" href="<?php echo $this->url(array('module' => 'editor', 'controller' => 'logout'), 'default', true)?>"><img style="vertical-align: middle;" src="<?php echo $baseUrl?>assets/images/logoff.gif" alt="" /></a>
+			        	<a id="logout" href="<?php echo $this->url(array('module' => 'editor', 'controller' => 'logout'), 'default', true)?>"><img style="vertical-align: middle;" src="<?php echo $baseUrl?>interaction_design/images/icons/logoff.gif" alt="" /></a>
 		        	<?php endif ?>
 	        	</div>
 	        	<div class="clear"></div>
@@ -103,13 +104,13 @@ $controller = Zend_Controller_Front::getInstance()->getRequest()->getControllerN
 		        <?php echo $this->render('editor_menu.phtml');?>
 		        <div class="clear"></div>
         	</div>
-
+		    
 		    <div id="content">
-
+		    
 		    	<?php if((string)$this->placeholder('lefttoppanel') || (string)$this->placeholder('leftbottompanel')):?>
 			    	<div id="left-panel">
 			    		<div id="left-panel-resizer"></div>
-
+			    		
 			    		<?php if((string)$this->placeholder('lefttoppanel')):?>
 				    	<div id="left-top-panel">
 				    		<div class="inner-panel">
@@ -119,7 +120,7 @@ $controller = Zend_Controller_Front::getInstance()->getRequest()->getControllerN
 						    </div>
 					    </div>
 					    <?php endif?>
-
+					    
 					    <?php if((string)$this->placeholder('leftbottompanel')):?>
 						<div id="left-bottom-panel">
 							<div class="inner-panel">
@@ -132,7 +133,7 @@ $controller = Zend_Controller_Front::getInstance()->getRequest()->getControllerN
 					    <div class="clear"></div>
 				    </div>
 			    <?php endif?>
-
+			    
 				<div id="central-panel">
 					<div class="inner-panel">
 			    		<div id="central-content">
@@ -142,10 +143,10 @@ $controller = Zend_Controller_Front::getInstance()->getRequest()->getControllerN
 					</div>
 					<div class="clear"></div>
 				</div>
-
+				
 				<?php if((string)$this->placeholder('rightpanel')):?>
 				<div id="right-panel">
-					<div class="inner-panel">
+					<div class="inner-panel">   		
 						<div id="righttoppanel">
 							<?php echo $this->placeholder('rightpanel') ?>
 					    </div>
@@ -154,8 +155,8 @@ $controller = Zend_Controller_Front::getInstance()->getRequest()->getControllerN
 			    </div>
 			    <?php endif?>
 		    </div>
-
-			<div id="footer"><div id="copyright"><span>Copyright 2011-2013 <a href="http://www.picturae.com" target="_blank">Picturae</a>, distributed under the terms of the <a href="http://www.gnu.org/licenses/gpl-3.0.txt" target="_blank">GNU General Public License v3</a>.</span></div></div>
+		    
+			<div id="footer"><div id="copyright"><span>&copy; 2012 <a href="http://www.pictura-dp.nl/" target="_blank">Pictura Database Publishing</a></span></div></div>
 		</div>
 	</body>
 </html>

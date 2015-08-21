@@ -445,7 +445,7 @@ class OaiPmh
 	    $start = 0;
 	    $conceptSchemes = array();
 	    while (true) {
-	        $params = array('limit' => $limit, 'start' => $start, 'fl' => 'uri,uuid,xml,tenant,collection,dcterms_title');
+	        $params = array('limit' => $limit, 'start' => $start, 'fl' => 'uri,uuid,xml,tenant,collection');
     	    $response = new OpenSKOS_SKOS_ConceptSchemes(OpenSKOS_Solr::getInstance()->search('class:ConceptScheme', $params));
     	    foreach ($response as $doc) {
     	    	if (!isset($conceptSchemes[$doc['tenant']])) {
@@ -574,9 +574,6 @@ class OaiPmh
 		$this->_view->data = $paginator;
 		$this->_view->metadataPrefix = $this->getParam('metadataPrefix');
 		$this->_view->namespacesByCollection = OpenSKOS_Db_Table_Namespaces::getNamespacesByCollection();
-		
-		$this->_view->conceptSchemes = $this->loadAllConceptSchemes(false);
-		
 		return $this->_view->render('index/ListRecords.phtml');
 	}
 	

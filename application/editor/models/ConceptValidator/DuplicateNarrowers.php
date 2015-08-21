@@ -28,7 +28,7 @@ class Editor_Models_ConceptValidator_DuplicateNarrowers extends Editor_Models_Co
 	/**
 	 * @see Editor_Models_ConceptValidator::validate($concept)
 	 */
-	public function isValid(Editor_Models_Concept $concept, $extraData)
+	public function isValid(Editor_Models_Concept $concept)
 	{
 		$this->_setField('narrower');
 		

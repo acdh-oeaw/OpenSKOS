@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenSKOS English translation\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-03-14 08:56+0100\n"
-"PO-Revision-Date: 2013-03-14 08:57+0100\n"
+"POT-Creation-Date: 2012-12-17 09:21+0100\n"
+"PO-Revision-Date: 2012-12-17 09:24+0100\n"
 "Last-Translator: \n"
 "Language-Team:  <mark@lindeman.nu>\n"
 "Language: en_US\n"
@@ -361,14 +361,6 @@ msgstr "One or more of the broader relations create a cycle"
 msgid "Some concepts are defined more than once as narrower"
 msgstr "Some concepts are defined more than once as narrower"
 
-#: ../application/editor/models/ConceptValidator/ExpiredWithRelations.php:40
-msgid "Can not change status to \"expired\" while there are still relations to other concepts."
-msgstr "Can not change status to \"expired\" while there are still relations to other concepts."
-
-#: ../application/editor/models/ConceptValidator/ExpiredWithRelations.php:58
-msgid "Can not relate the concept to any expired concepts. The fallowing concepts are expired:"
-msgstr "Can not relate the concept to any expired concepts. The following concepts are expired:"
-
 #: ../application/editor/models/ConceptValidator/UniquePrefLabelInScheme.php:62
 msgid "There is already a concept with same preferred label in one of the schemes."
 msgstr "There is already a concept with same preferred label in one of the schemes."
@@ -462,9 +454,9 @@ msgid "Tenants"
 msgstr "Tenants"
 
 #: ../application/editor/forms/SearchOptions.php:290
-#: ../application/editor/forms/Concept.php:111
-#: ../application/editor/forms/Concept.php:135
-#: ../application/editor/forms/ConceptScheme.php:128
+#: ../application/editor/forms/Concept.php:110
+#: ../application/editor/forms/Concept.php:134
+#: ../application/editor/forms/ConceptScheme.php:131
 msgid "Ok"
 msgstr "Ok"
 
@@ -545,55 +537,55 @@ msgstr "created"
 msgid "modified"
 msgstr "modified"
 
-#: ../application/editor/forms/Concept.php:117
+#: ../application/editor/forms/Concept.php:116
 msgid "Switch to view mode"
 msgstr "Switch to view mode"
 
-#: ../application/editor/forms/Concept.php:123
+#: ../application/editor/forms/Concept.php:122
 msgid "Export"
 msgstr "Export"
 
-#: ../application/editor/forms/Concept.php:263
+#: ../application/editor/forms/Concept.php:262
 msgid "Add documentation property"
 msgstr "Add documentation property"
 
-#: ../application/editor/forms/Concept.php:286
+#: ../application/editor/forms/Concept.php:285
 msgid "Has broader"
 msgstr "Has broader"
 
-#: ../application/editor/forms/Concept.php:287
+#: ../application/editor/forms/Concept.php:286
 msgid "Has narrower"
 msgstr "Has narrower"
 
-#: ../application/editor/forms/Concept.php:288
+#: ../application/editor/forms/Concept.php:287
 msgid "Has related"
 msgstr "Has related"
 
-#: ../application/editor/forms/Concept.php:359
+#: ../application/editor/forms/Concept.php:358
 msgid "Has broader match"
 msgstr "Has broader match"
 
-#: ../application/editor/forms/Concept.php:360
+#: ../application/editor/forms/Concept.php:359
 msgid "Has narrower match"
 msgstr "Has narrower match"
 
-#: ../application/editor/forms/Concept.php:361
+#: ../application/editor/forms/Concept.php:360
 msgid "Has related match"
 msgstr "Has related match"
 
-#: ../application/editor/forms/Concept.php:362
+#: ../application/editor/forms/Concept.php:361
 msgid "Has mapping relation"
 msgstr "Has mapping relation"
 
-#: ../application/editor/forms/Concept.php:363
+#: ../application/editor/forms/Concept.php:362
 msgid "Has close match"
 msgstr "Has close match"
 
-#: ../application/editor/forms/Concept.php:364
+#: ../application/editor/forms/Concept.php:363
 msgid "Has exact match"
 msgstr "Has exact match"
 
-#: ../application/editor/forms/ConceptScheme.php:107
+#: ../application/editor/forms/ConceptScheme.php:110
 msgid "Collection:"
 msgstr "Collection:"
 
@@ -669,10 +661,10 @@ msgid "Error:"
 msgstr "Error:"
 
 #: ../application/editor/controllers/InstitutionController.php:36
-#: ../application/editor/controllers/ConceptSchemeController.php:93
-#: ../application/editor/controllers/CollectionsController.php:166
+#: ../application/editor/controllers/ConceptSchemeController.php:89
+#: ../application/editor/controllers/CollectionsController.php:161
 #: ../application/editor/controllers/UsersController.php:59
-#: ../application/editor/controllers/ConceptController.php:127
+#: ../application/editor/controllers/ConceptController.php:123
 msgid "No POST data recieved"
 msgstr "No POST data recieved"
 
@@ -681,43 +673,43 @@ msgstr "No POST data recieved"
 msgid "Data saved"
 msgstr "Data saved"
 
-#: ../application/editor/controllers/ConceptSchemeController.php:167
+#: ../application/editor/controllers/ConceptSchemeController.php:163
 msgid "A job for deleting the concept scheme was added."
 msgstr "A job for deleting the concept scheme was added."
 
-#: ../application/editor/controllers/CollectionsController.php:55
+#: ../application/editor/controllers/CollectionsController.php:50
 msgid "This collection does not appear to have a OAI Server as source."
 msgstr "This collection does not appear to have a OAI Server as source."
 
-#: ../application/editor/controllers/CollectionsController.php:92
+#: ../application/editor/controllers/CollectionsController.php:87
 msgid "An OAI Harvest job is scheduled"
 msgstr "An OAI Harvest job is scheduled"
 
-#: ../application/editor/controllers/CollectionsController.php:102
+#: ../application/editor/controllers/CollectionsController.php:97
 msgid "Since this collection has an OAI Server as source, you can not upload files for import."
 msgstr "Since this collection has an OAI Server as source, you can not upload files for import."
 
-#: ../application/editor/controllers/CollectionsController.php:114
+#: ../application/editor/controllers/CollectionsController.php:109
 msgid "Failed to create upload folder"
 msgstr "Failed to create upload folder"
 
-#: ../application/editor/controllers/CollectionsController.php:130
+#: ../application/editor/controllers/CollectionsController.php:125
 msgid "A file with that name is already scheduled for import. Please delete the job if you want to import it again."
 msgstr "A file with that name is already scheduled for import. Please delete the job if you want to import it again."
 
-#: ../application/editor/controllers/CollectionsController.php:157
+#: ../application/editor/controllers/CollectionsController.php:152
 msgid "An import job is scheduled"
 msgstr "An import job is scheduled"
 
-#: ../application/editor/controllers/CollectionsController.php:173
+#: ../application/editor/controllers/CollectionsController.php:168
 msgid "You can not delete an empty collection."
 msgstr "You can not delete an empty collection."
 
-#: ../application/editor/controllers/CollectionsController.php:177
+#: ../application/editor/controllers/CollectionsController.php:172
 msgid "The collection has been deleted, it might take a while before changes are committed to our system."
 msgstr "The collection has been deleted, it might take a while before changes are committed to our system."
 
-#: ../application/editor/controllers/CollectionsController.php:211
+#: ../application/editor/controllers/CollectionsController.php:206
 #, php-format
 msgid "Collection `%s` not found"
 msgstr "Collection `%s` not found"
@@ -742,11 +734,11 @@ msgstr "User not found"
 msgid "You are not allowed to edit this user."
 msgstr "You are not allowed to edit this user."
 
-#: ../application/editor/controllers/ConceptController.php:292
+#: ../application/editor/controllers/ConceptController.php:276
 msgid "A concept can not be deleted while there are semantic relations or mapping properties associated with it."
 msgstr "A concept can not be deleted while there are semantic relations or mapping properties associated with it."
 
-#: ../application/editor/controllers/ConceptController.php:497
+#: ../application/editor/controllers/ConceptController.php:481
 msgid "You can not edit concepts of different tenants."
 msgstr "You can not edit concepts of different tenants."
 
@@ -774,13 +766,9 @@ msgstr "Collection not found"
 msgid "You are not allowed to edit this job."
 msgstr "You are not allowed to edit this job."
 
-#: ../tools/jobs.php:262
-msgid "Tried to import the fallowing already existing concept schemes:"
-msgstr "Tried to import the following already existing concept schemes:"
-
-#: ../tools/jobs.php:270
-msgid "The documents with the fallowing notations were not imported because already exist:"
-msgstr "The documents with the following notations were not imported because already exist:"
+#: ../tools/jobs.php:264
+msgid "The documents with the fallowing notations were not imported because already exist: \""
+msgstr "The documents with the following notations were not imported because already exist: \""
 
 #: ../application/api/views/scripts/pagination.phtml:27
 #: ../application/api/views/scripts/pagination.phtml:30
@@ -816,6 +804,7 @@ msgid "Institutions"
 msgstr "Institutions"
 
 #: ../application/api/views/scripts/collections/get.phtml:27
+#: ../application/api/views/scripts/concept/get.phtml:43
 msgid "Institution"
 msgstr "Institution"
 
@@ -977,6 +966,7 @@ msgstr " or because the depth is higher then 1, the export will be executed in t
 
 #: ../application/editor/views/scripts/index/modalboxes/export.phtml:26
 #: ../application/editor/views/scripts/index/modalboxes/export.phtml:27
+#: ../application/editor/views/scripts/jobs/index.phtml:22
 msgid "Manage jobs"
 msgstr "Manage jobs"
 
@@ -1097,23 +1087,23 @@ msgstr "No schemes."
 msgid "Scheme"
 msgstr "Scheme"
 
-#: ../application/editor/views/scripts/concept-scheme/index.phtml:37
+#: ../application/editor/views/scripts/concept-scheme/index.phtml:36
 msgid "Icon"
 msgstr "Icon"
 
-#: ../application/editor/views/scripts/concept-scheme/index.phtml:56
+#: ../application/editor/views/scripts/concept-scheme/index.phtml:52
 msgid "Change Icon"
 msgstr "Change Icon"
 
-#: ../application/editor/views/scripts/concept-scheme/index.phtml:60
+#: ../application/editor/views/scripts/concept-scheme/index.phtml:56
 msgid "no icon"
 msgstr "no icon"
 
-#: ../application/editor/views/scripts/concept-scheme/index.phtml:65
+#: ../application/editor/views/scripts/concept-scheme/index.phtml:61
 msgid "Delete concept scheme"
 msgstr "Delete concept scheme"
 
-#: ../application/editor/views/scripts/concept-scheme/index.phtml:74
+#: ../application/editor/views/scripts/concept-scheme/index.phtml:70
 msgid "Are you sure you want to delete the concept scheme?"
 msgstr "Are you sure you want to delete the concept scheme?"
 
@@ -1151,8 +1141,6 @@ msgstr "no"
 
 #: ../application/editor/views/scripts/jobs/view.phtml:34
 #: ../application/editor/views/scripts/jobs/index.phtml:69
-#: ../application/editor/views/scripts/concept/view.phtml:276
-#: ../application/editor/views/scripts/concept/edit.phtml:52
 msgid "Created"
 msgstr "Created"
 
@@ -1183,7 +1171,6 @@ msgid "File details"
 msgstr "File details"
 
 #: ../application/editor/views/scripts/jobs/view.phtml:74
-#: ../application/editor/views/scripts/users/view.phtml:43
 msgid "Type"
 msgstr "Type"
 

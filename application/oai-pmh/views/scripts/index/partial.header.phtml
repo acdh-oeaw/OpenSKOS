@@ -31,16 +31,11 @@ if ($this->doc['collection']) {
         $collection = $this->collections[$this->doc['collection']]['code'];
     }
 }
-
-$isDeleted = (true === $this->doc['deleted'] || (isset($this->doc['status']) && $this->doc['status'] == 'expired'));
-
-$dateStamp = new Zend_Date(($isDeleted && ! empty($this->doc['deleted_timestamp']) ? $this->doc['deleted_timestamp'] : $this->doc['timestamp']), Zend_Date::ISO_8601);
-
 ?>
-	<header <?php if ($isDeleted) echo 'status="deleted"'?>>
+	<header <?php if (true === $this->doc['deleted']) echo 'status="deleted"'?>>
 		<identifier><?php echo $this->doc['uuid']?></identifier>
-		<datestamp><?php echo date(OaiPmh::XS_DATETIME_FORMAT, $dateStamp->toString(Zend_Date::TIMESTAMP));?></datestamp>
-		<?php if (! $isDeleted):?>
+		<datestamp><?php echo $this->doc['timestamp']?></datestamp>
+		<?php if (false === $this->doc['deleted']):?>
 		<setSpec><?php echo $this->doc['tenant']?></setSpec>
     		<?php if ($collection):?>
 		<setSpec><?php echo $this->doc['tenant'].':'.$collection?></setSpec>

@@ -28,7 +28,7 @@ class Editor_Models_ConceptValidator_IsAtLeastInOneScheme extends Editor_Models_
 	/**
 	 * @see Editor_Models_ConceptValidator::validate($concept)
 	 */
-	public function isValid(Editor_Models_Concept $concept, $extraData)
+	public function isValid(Editor_Models_Concept $concept)
 	{
 		$this->_setField('inScheme');
 		

@@ -25,7 +25,6 @@ EditorSearch = new Class({
 	defaultUser: null,
 	defaultRowsCount: null,
 	appendResults: false,
-	moreResultsProccessing: false,
 	searchFromUrl: false,
 	resultsFound: 0,
 	delayedSearchDelay: 500,
@@ -70,27 +69,19 @@ EditorSearch = new Class({
 		if (this.searchForm.getElement('[name=searchText]').value) {
 			this.search();
 		}
-                
-                this.hideProfilesSelectIfNoOptions();
 	},
 	toggleInstantResults: function () {
 		if ( ! this.searchForm.getElement('[type=checkbox][name=instantResults]') || 
 				this.searchForm.getElement('[type=checkbox][name=instantResults]').checked) {
 			this.searchForm.getElement('[name=searchText]').addEvent('keyup', this.delayedSearch);
 			this.searchForm.getElements('[name=truncate]').addEvent('change', this.search);
-			this.searchForm.addEvent('change:relay([name="conceptScheme[]"])', this.delayedSearch);
-			this.searchForm.addEvent('change:relay([name="allowedConceptScheme[]"])', this.delayedSearch);
-			if (this.searchForm.getElement('[name="searchProfileId"]')) {
-				this.searchForm.getElements('[name="searchProfileId"]').addEvent('change', this.search);
-			}
+			this.searchForm.getElements('[name="conceptScheme[]"]').addEvent('change', this.delayedSearch);
+			this.searchForm.getElements('[name="searchProfileId"]').addEvent('change', this.search);
 		} else {
 			this.searchForm.getElement('[name=searchText]').removeEvent('keyup', this.delayedSearch);
 			this.searchForm.getElements('[name=truncate]').removeEvent('change', this.search);
 			this.searchForm.getElements('[name="conceptScheme[]"]').removeEvent('change', this.delayedSearch);
-			this.searchForm.getElements('[name="allowedConceptScheme[]"]').removeEvent('change', this.delayedSearch);
-			if (this.searchForm.getElement('[name="searchProfileId"]')) {
-				this.searchForm.getElements('[name="searchProfileId"]').removeEvent('change', this.search);
-			}
+			this.searchForm.getElements('[name="searchProfileId"]').removeEvent('change', this.search);
 		}
 	},
 	search: function () {
@@ -104,6 +95,11 @@ EditorSearch = new Class({
 			this.searchForm.getElement('[name=user]').set('value', this.defaultUser);
 			
 			Editor.Url.setParam('search', this.searchForm.getElement('[name=searchText]').get('value'));
+			if (this.searchForm.getElements('[name="conceptScheme[]"]:checked').length > 0) {
+				Editor.Url.setParam('scheme', this.searchForm.getElements('[name="conceptScheme[]"]:checked').get('value'));
+			} else {
+				Editor.Url.setParam('scheme', '');
+			}
 			Editor.Url.setParam('user', this.searchForm.getElement('[name=user]').get('value'));
 		}
 		this.searchFromUrl = false;
@@ -125,75 +121,59 @@ EditorSearch = new Class({
 			Editor.View.emptyContainer(this.searchResults.getElement('.concepts-list'), '.concept-link');
 		}
 		
-		if (JSON.validate(response)) {
-			var data = JSON.decode(response);
-			if (data.status == 'ok') {
-				
-				this.searchResults.getElement('.actions').show();
-				
-				if (data.concepts.length) {
-					this.searchResults.getElement('.results-found').set('text', '(' + data.numFound + ')');
-					this.resultsFound = data.numFound;
-					for (var i = 0; i < data.concepts.length; i++) {
-						this.addResultItem(data.concepts[i]);
-					}
-					this.toggleMoreResultsLink(data.numFound);
-					if (this.resultsFound == 1 && ! Editor.Concept.isInEditMode()) {
-						Editor.Control.loadConcept(data.concepts[0].uuid);
-					}
-				} else {
-					if ( ! this.appendResults) {
-						this.searchResults.getElement('.results-found').empty();
-						this.resultsFound = 0;
-						if (this.searchForm.getElementById('searchText').value != '') {
-							this.searchResults.getElement('.no-results-search-text').set('text', this.searchForm.getElementById('searchText').value);
-							this.searchResults.getElement('.no-results').show();
-						} else {
-							this.searchResults.getElement('.no-results-no-search-string').show();
-						}
-						this.searchResults.getElement('.actions').hide();
-					}
-					this.toggleMoreResultsLink(0);
+		var data = JSON.decode(response);
+		if (data.status == 'ok') {
+			
+			this.searchResults.getElement('.actions').show();
+			
+			if (data.concepts.length) {
+				this.searchResults.getElement('.results-found').set('text', '(' + data.numFound + ')');
+				this.resultsFound = data.numFound;
+				for (var i = 0; i < data.concepts.length; i++) {
+					this.addResultItem(data.concepts[i]);
 				}
-				
-				if (this.moreResultsProccessing) {
-					this.moreResultsProccessing = false;
+				this.toggleMoreResultsLink(data.numFound);
+				if (this.resultsFound == 1 && ! Editor.Concept.isInEditMode()) {
+					Editor.Control.loadConcept(data.concepts[0].uuid);
 				}
-				
-				this.setConceptSchemeOptions(data.conceptSchemeOptions);
-				this.setProfilesOptions(data.profileOptions);
 			} else {
-				this.showError(data.message);
+				if ( ! this.appendResults) {
+					this.searchResults.getElement('.results-found').empty();
+					this.resultsFound = 0;
+					if (this.searchForm.getElementById('searchText').value != '') {
+						this.searchResults.getElement('.no-results-search-text').set('text', this.searchForm.getElementById('searchText').value);
+						this.searchResults.getElement('.no-results').show();
+					} else {
+						this.searchResults.getElement('.no-results-no-search-string').show();
+					}
+					this.searchResults.getElement('.actions').hide();
+				}
+				this.toggleMoreResultsLink(0);
 			}
 		} else {
-			this.showError();
-		} 
+			this.showError(data.message);
+		}
 	},
 	showError: function (message) {
 		this.searchResults.getElement('.results-found').empty();
 		this.resultsFound = 0;
 		this.searchResults.getElement('.actions').hide();
 		this.toggleMoreResultsLink(0);
-		if (message) {
-			this.searchResults.getElement('.errors').set('text', message);
-		}
+		this.searchResults.getElement('.errors').set('text', message);
 		this.searchResults.getElement('.errors').show();
 	},
 	showMoreResults: function (ev) {
-		if (! this.moreResultsProccessing) {
-			this.moreResultsProccessing = true;
-			var rows = parseInt(this.searchForm.getElement('[name=rows]').value);
-			// Gets the next defaultRowsCount rows.
-			this.searchForm.getElement('[name=start]').value = rows;
-			this.searchForm.getElement('[name=rows]').value = this.defaultRowsCount;
-
-			this.appendResults = true; // We need to add the new results to the current results.
-			this.searchForm.send();
-
-			// Gets all the results if new search is performed.
-			this.searchForm.getElement('[name=start]').value = 0;
-			this.searchForm.getElement('[name=rows]').value = rows + this.defaultRowsCount;
-		}
+		var rows = parseInt(this.searchForm.getElement('[name=rows]').value);
+		// Gets the next defaultRowsCount rows.
+		this.searchForm.getElement('[name=start]').value = rows;
+		this.searchForm.getElement('[name=rows]').value = this.defaultRowsCount;
+		
+		this.appendResults = true; // We need to add the new results to the current results.
+		this.searchForm.send();
+		
+		// Gets all the results if new search is performed.
+		this.searchForm.getElement('[name=start]').value = 0;
+		this.searchForm.getElement('[name=rows]').value = rows + this.defaultRowsCount;
 	},
 	toggleMoreResultsLink: function (numFound) {
 		if (numFound > this.searchForm.getElement('[name=rows]').value) {
@@ -228,9 +208,8 @@ EditorSearch = new Class({
 			});
 			
 			// This will be used from inside the iframe with advanced options.
-			window.onAdvancedOptionsChanged = function (conceptSchemeOptions, profilesOptions, onlyUpdateProfiles) {
-				self.setConceptSchemeOptions(conceptSchemeOptions);
-				self.setProfilesOptions(profilesOptions);
+			window.onAdvancedOptionsChanged = function (profilesOptions, onlyUpdateProfiles) {
+				self.setProfilesOptions(profilesOptions);				
 				if ( ! onlyUpdateProfiles) {
 					SqueezeBox.close();				
 					self.search();
@@ -255,56 +234,25 @@ EditorSearch = new Class({
 		}
 		return uuids;
 	},
-	setConceptSchemeOptions: function (conceptSchemeOptions) {
-                var elementPrefix = 'conceptScheme';
-                if (! this.searchForm.getElement('#' + elementPrefix + '-element')) {
-                    elementPrefix = 'allowedConceptScheme';
-                }
-                
-		if (this.searchForm.getElement('#' + elementPrefix + '-element')) {
-			var conceptSchemeElement = this.searchForm.getElement('#' + elementPrefix + '-element');
-			conceptSchemeElement.empty();
-			
-			for (var i = 0; i < conceptSchemeOptions.length; i ++) {
-				var optionKey = elementPrefix + '-' + conceptSchemeOptions[i].id.replace(/[^\w]/g, '');
-				var label = new Element('label', {'for': optionKey});
-				var checkbox = new Element('input', {'type': 'checkbox', 'name': elementPrefix + '[]', 'id': optionKey, 'value': conceptSchemeOptions[i].id});
-				if (conceptSchemeOptions[i].selected) {
-					checkbox.setAttribute('checked', 'checked');
-				}
-				label.adopt(checkbox);
-				label.appendText(conceptSchemeOptions[i].name);
-				conceptSchemeElement.adopt(label);
-				conceptSchemeElement.adopt(new Element('br'));
-			}
-		}
-	},
 	setProfilesOptions: function (profilesOptions) {
-		if (this.searchForm.getElement('select[name=searchProfileId]')) {
-			var searchDropdown = this.searchForm.getElement('select[name=searchProfileId]');
-			searchDropdown.empty();
-			for (var i = 0; i < profilesOptions.length; i ++) {
-				if (profilesOptions[i].id == 'custom' && ! profilesOptions[i].selected) {
-					continue;
-				}
-				var option = new Element('option', {value: profilesOptions[i].id, text: profilesOptions[i].name, selected: profilesOptions[i].selected});
-				option.inject(searchDropdown);
+		var searchDropdown = this.searchForm.getElement('select[name=searchProfileId]');
+		searchDropdown.empty();
+		for (var i = 0; i < profilesOptions.length; i ++) {
+			if (profilesOptions[i].id == 'custom' && ! profilesOptions[i].selected) {
+				continue;
 			}
-                        this.hideProfilesSelectIfNoOptions();
+			var option = new Element('option', {value: profilesOptions[i].id, text: profilesOptions[i].name, selected: profilesOptions[i].selected});
+			option.inject(searchDropdown);
+		}
+
+		if (searchDropdown.getElements('option').length > 2) {
+			$('search-profile-selector').show();
+		} else {
+			$('search-profile-selector').hide();
 		}
 	},
-        hideProfilesSelectIfNoOptions: function() {
-            var searchDropdown = this.searchForm.getElement('select[name=searchProfileId]');
-            if (searchDropdown) {
-                if (searchDropdown.getElements('option').length > 1) {
-                        $('search-profile-selector').show();
-                } else {
-                        $('search-profile-selector').hide();
-                }
-            }
-        },
 	hideCustomProfileIfNotSelected: function () {
-		if (this.searchForm.getElement('select[name=searchProfileId]') && this.searchForm.getElement('select[name=searchProfileId]').get('value') != 'custom' && this.searchForm.getElement('select[name=searchProfileId]').getElement('option[value=custom]')) {
+		if (this.searchForm.getElement('select[name=searchProfileId]').get('value') != 'custom' && this.searchForm.getElement('select[name=searchProfileId]').getElement('option[value=custom]')) {
 			this.searchForm.getElement('select[name=searchProfileId]').getElement('option[value=custom]').hide();
 		}
 	}

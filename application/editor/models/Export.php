@@ -237,7 +237,13 @@ class Editor_Models_Export
 	 */
 	public function exportToFile()
 	{
-		$mainDirPath = $this->getExportFilesDirPath();
+		$editorOptions = OpenSKOS_Application_BootstrapAccess::getOption('editor');
+		
+		if (isset($editorOptions['export']['filesPath'])) {
+			$mainDirPath = $editorOptions['export']['filesPath'];
+		} else {
+			$mainDirPath = APPLICATION_PATH . '/../public/data/export';
+		}
 		
 		if ( ! is_dir($mainDirPath)) {
 			throw new Zend_Exception('Directory "' . $mainDirPath . '" must exist and must have read and write rights for the export to work.');
@@ -314,26 +320,6 @@ class Editor_Models_Export
 				$this->_exportXml($streamHandle);
 			}; break;
 		}
-	}
-	
-	/**
-	 * Gets the path to the dir where the export files should be placed.
-	 *
-	 * @return string
-	 */
-	public function getExportFilesDirPath()
-	{
-		$editorOptions = OpenSKOS_Application_BootstrapAccess::getOption('editor');
-	
-		if (isset($editorOptions['export']['filesPath'])) {
-			$mainDirPath = $editorOptions['export']['filesPath'];
-		} else {
-			$mainDirPath = APPLICATION_PATH . '/../public/data/export';
-		}
-	
-		$mainDirPath = rtrim($mainDirPath, '/') . '/';
-		
-		return $mainDirPath;
 	}
 	
 	/**

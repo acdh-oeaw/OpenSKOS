@@ -37,27 +37,11 @@ class OpenSKOS_Controller_Action_Helper_File extends Zend_Controller_Action_Help
 	 * @param string $fileContent
 	 * @param string $contentType, optianal The MIME content type. Default is "application/octet-stream"
 	 */
-	public function sendFileContent($fileName, $fileContent, $contentType = 'application/octet-stream') 
+	public function sendFile($fileName, $fileContent, $contentType = 'application/octet-stream') 
 	{
 		header('Content-Type: ' . $contentType);
 		header('Content-Disposition: attachment; filename="' . $fileName . '"');			
 		echo $fileContent;
-		exit;
-	}
-	
-	/**
-	 * Sends a file as attachment to the client.
-	 * Strategy pattern: call helper as broker method
-	 *
-	 * @param string $fileName The name of the file for the client.
-	 * @param string $filePath
-	 * @param string $contentType, optianal The MIME content type. Default is "application/octet-stream"
-	 */
-	public function sendFile($fileName, $filePath, $contentType = 'application/octet-stream')
-	{
-		header('Content-Type: ' . $contentType);
-		header('Content-Disposition: attachment; filename="' . $fileName . '"');		
-		fpassthru(fopen($filePath, 'r'));
 		exit;
 	}
 }

@@ -136,19 +136,6 @@ class OpenSKOS_Db_Table_Users extends Zend_Db_Table
 		return $model->find(Zend_Auth::getInstance()->getIdentity()->id)->current();
 	}
 	
-	/**
-	 * @return OpenSKOS_Db_Table_Row_User
-	 */
-	public static function requireFromIdentity()
-	{
-		$user = self::fromIdentity();
-		if (null === $user) {
-			throw new Zend_Controller_Action_Exception('Identity user not found', 404);
-		}
-		
-		return $user;
-	}
-	
 	public function uniqueEmail($email, Array $data)
 	{
 		return $this->_uniqueFieldValue('email', $email, $data);

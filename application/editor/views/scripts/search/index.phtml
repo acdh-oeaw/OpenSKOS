@@ -24,9 +24,7 @@
 
 <?php $this->placeholder('lefttoppanel')->captureStart();?>
 <?php echo $this->searchForm;?>
-<?php if (! $this->disableSearchProfileChanging): ?>
-	<a href="<?php echo $this->url(array('controller' => 'search', 'action' => 'show-form'))?>"><?php  echo $this->translate('Show advanced search options')?></a>
-<?php endif?>
+<a href="<?php echo $this->url(array('controller' => 'search', 'action' => 'show-form'))?>"><?php  echo $this->translate('Show advanced search options')?></a>
 <?php $this->placeholder('lefttoppanel')->captureEnd() ?>
 
 <?php $this->placeholder('leftbottompanel')->captureStart();?>

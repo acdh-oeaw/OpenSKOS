@@ -92,9 +92,9 @@ class OpenSKOS_Db_Table_Row_Collection extends Zend_Db_Table_Row
 			$form->addElement('select', 'lang', array('label' => 'The default language to use if no "xml:lang" attribute is found', 'multiOptions' => $editorOptions['languages']));
 						
 			$form->addElement('checkbox', 'toBeChecked', array('label' => 'Sets the toBeCheked status of imported concepts'));			
-			$form->addElement('checkbox', 'purge', array('label' => 'Purge. Delete all concept schemes found in the file. (will also delete concepts inside them)'));
-			$form->addElement('checkbox', 'delete-before-import', array('label' => _('Delete concepts in this collection before import')));            
-			$form->addElement('checkbox', 'onlyNewConcepts', array('label' => _('Import contains only new concepts. Do not update any concepts if they match by notation.')));
+			$form->addElement('checkbox', 'purge', array('label' => 'Delete all concepts per ConceptSchema found in the import files'));
+			
+			$form->addElement('checkbox', 'delete-before-import', array('label' => _('Delete concepts in this collection before import')));
 			
 			$form->addElement('submit', 'submit', array('label'=>'Submit'));
 		}
@@ -150,20 +150,6 @@ class OpenSKOS_Db_Table_Row_Collection extends Zend_Db_Table_Row
 		return $this->getTable()->getConceptSchemes($this);
 	}
 	
-	public function getConceptsBaseUri()
-	{
-		if (isset($this->conceptsBaseUrl) && !empty($this->conceptsBaseUrl)) {
-			return $this->conceptsBaseUrl;
-		} else {
-			$editorOptions = OpenSKOS_Application_BootstrapAccess::getOption('editor');
-			if (isset($editorOptions['conceptSchemesDefaultBaseUri'])) {
-				return $editorOptions['conceptSchemesDefaultBaseUri'];
-			} else {
-				return '';
-			}
-		}
-	}
-	
 	public function addNamespace(OpenSKOS_Db_Table_Row_Namespace $namespace)
 	{
 		$model = new OpenSKOS_Db_Table_CollectionHasNamespaces();
@@ -193,7 +179,6 @@ class OpenSKOS_Db_Table_Row_Collection extends Zend_Db_Table_Row
 				->addElement('text', 'license_url', array('label' => _('Custom (URL)')))
 				->addElement('checkbox', 'allow_oai', array('label' => _('Allow OpenSKOS OAI Harvesting')))
 				->addElement('select', 'OAI_baseURL', array('label' => _('OAI baseURL'), 'style' => 'width: 450px;'))
-				->addElement('text', 'conceptsBaseUrl', array('label' => _('Concepts base url'), 'style' => 'width: 450px;'))
 				->addElement('submit', 'submit', array('label'=>_('Submit')))
 				->addElement('reset', 'reset', array('label'=>_('Reset')))
 				->addElement('submit', 'cancel', array('label'=>_('Cancel')))

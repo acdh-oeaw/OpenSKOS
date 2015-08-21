@@ -25,7 +25,7 @@ class Api_CollectionsController extends OpenSKOS_Rest_Controller
 	{
 		parent::init();
 		$this->_helper->contextSwitch()
-			->initContext($this->getRequestedFormat());
+			->initContext($this->getRequest()->getParam('format', 'rdf'));
 		
 		if('html' == $this->_helper->contextSwitch()->getCurrentContext()) {
 			//enable layout:
@@ -54,7 +54,7 @@ class Api_CollectionsController extends OpenSKOS_Rest_Controller
 					break;
 			}
 		}
-		if ($context == 'json' || $context == 'jsonp') {
+		if ($context == 'json') {
 			$this->view->assign('collections', $model->fetchAll($select)->toArray());
 		} else {
 			$this->view->collections = $model->fetchAll($select);
@@ -81,7 +81,7 @@ class Api_CollectionsController extends OpenSKOS_Rest_Controller
 		}
 		
 		$context = $this->_helper->contextSwitch()->getCurrentContext();
-		if ($context == 'json' || $context == 'jsonp') {
+		if ($context == 'json') {
 			foreach ($collection as $key => $val) {
 				$this->view->assign($key, $val);
 			}

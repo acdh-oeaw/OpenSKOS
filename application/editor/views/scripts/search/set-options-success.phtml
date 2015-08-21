@@ -20,11 +20,10 @@
  */
 ?>
 <?php
-$conceptSchemeOptions = json_encode($this->conceptSchemeOptions);
 $profilesOptions = json_encode($this->profilesOptions);
 $js = <<<JS
 if (parent.onAdvancedOptionsChanged) {
-	parent.onAdvancedOptionsChanged({$conceptSchemeOptions}, {$profilesOptions});
+	parent.onAdvancedOptionsChanged({$profilesOptions});
 }
 JS;
 

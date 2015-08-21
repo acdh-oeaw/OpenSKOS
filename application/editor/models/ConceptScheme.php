@@ -365,7 +365,7 @@ class Editor_Models_ConceptScheme extends Api_Models_Concept
 	 */
 	protected function getRdfMapping()
 	{
-		return array('resourceFields' => array('hasTopConcept'), 'dctermsDateFields' => array(), 'simpleSkosFields' => array());
+		return array('resourceFields' => array('hasTopConcept'), 'dctermsDateFields' => array());
 	}
 	
 	/**
@@ -423,12 +423,18 @@ class Editor_Models_ConceptScheme extends Api_Models_Concept
 	 * Blank code can be passed for template uri.
 	 *
 	 * @param string $uriCode
-	 * @param string $uriBase
+	 * @param string $uriBase optional
 	 */
-	public static function buildUri($uriCode, $uriBase)
+	public static function buildUri($uriCode, $uriBase = '')
 	{
 		if (empty($uriBase)) {
-			throw new Exception('Must provide uri base.');
+			$editorOptions = OpenSKOS_Application_BootstrapAccess::getOption('editor');
+			if (isset($editorOptions['conceptSchemesDefaultBaseUri'])) {
+				return $editorOptions['conceptSchemesDefaultBaseUri'] . $uriCode;
+			} else {
+				//!TODO is there any backup uri if no conceptSchemesDefaultBaseUri is provided.
+				return $uriCode;
+			}
 		} else {
 			if (substr($uriBase, -1) != '/') {
 				$uriBase .= '/';

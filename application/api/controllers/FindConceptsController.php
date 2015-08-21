@@ -34,7 +34,7 @@ class Api_FindConceptsController extends OpenSKOS_Rest_Controller {
 			$this->getRequest()->getParams()
 		);
 		$this->_helper->contextSwitch()
-			->initContext($this->getRequestedFormat());
+			->initContext($this->getRequest()->getParam('format', 'rdf'));
 		
 		if('html' == $this->_helper->contextSwitch()->getCurrentContext()) {
 			//enable layout:
@@ -50,7 +50,7 @@ class Api_FindConceptsController extends OpenSKOS_Rest_Controller {
 		}
 		$concepts = $this->model->getConcepts($q);
 		$context = $this->_helper->contextSwitch()->getCurrentContext();
-		if ($context === 'json' || $context === 'jsonp') {
+		if ($context === 'json') {
 			foreach ($concepts as $key => $val) {
 				foreach ($val['docs'] as &$doc) unset($doc['xml']);
 				$this->view->$key = $val;
@@ -71,8 +71,7 @@ class Api_FindConceptsController extends OpenSKOS_Rest_Controller {
 	public function getAction() {
 		
 		$concept = $this->_fetchConcept();
-                $context = $this->_helper->contextSwitch()->getCurrentContext();
-		if ($context == 'json' || $context == 'jsonp') {
+		if ($this->_helper->contextSwitch()->getCurrentContext()==='json') {
 			if (null !== $concept) {
 				foreach ($concept as $key => $var) {
 					if ($key == 'xml') continue;
@@ -129,19 +128,11 @@ class Api_FindConceptsController extends OpenSKOS_Rest_Controller {
                 
                 
                 $id_prefix = $this->getRequest()->getParam('id_prefix');
-                if (null!==$id_prefix && !OpenSKOS_Solr::isValidUuid($id)) {
-                    $id_prefix  = str_replace('%tenant%', $this->getRequest()->getParam('tenant'), $id_prefix );
+                if (null!==$id_prefix) {
                     $id = $id_prefix . $id;
                 }
 		
-        // Tries to find any not deleted concept.
-		$concept = $this->model->getConcept($id);
-		
-		// If not deleted concept was not found - tries to find deleted one.
-		if (null === $concept) {
-			$concept = $this->model->getConcept($id, array(), true);
-		}
-		
+		$concept = $this->model->getConcept($id, array(), true);
 		if (null === $concept) {
 			throw new Zend_Controller_Exception('Concept `'.$id.'` not found', 404);
 		}

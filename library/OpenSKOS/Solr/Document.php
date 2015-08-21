@@ -78,7 +78,7 @@ class OpenSKOS_Solr_Document implements Countable, ArrayAccess, Iterator
 		unset($this->fieldnames[$ix]);
 		$fieldnames = array();
 		foreach ($this->fieldnames as $fieldname) $fieldnames[] = $fieldname;
-		$this->fieldnames = $fieldnames;
+		$this->fieldnames = $fieldname;
 		$this->rewind();
 	}
 	
@@ -148,14 +148,6 @@ class OpenSKOS_Solr_Document implements Countable, ArrayAccess, Iterator
 	    	if (empty($currentNotation)) {
 	    		$this->fieldnames[] = 'notation';
 	    		$this->data['notation'] = array(OpenSKOS_Db_Table_Notations::getNext());
-	    		
-	    		// Adds the notation to the xml. At the end just before </rdf:Description>
-	    		$closingTag = '</rdf:Description>';
-	    		$notationTag = '<skos:notation>' . $this->data['notation'][0] . '</skos:notation>';
-	    		$xml = $this->data['xml'];
-	    		$xml = str_replace($closingTag, $notationTag . $closingTag, $xml);
-	    		$this->data['xml'] = $xml;
-	    		
 	    	} else {
 	    		if ( ! OpenSKOS_Db_Table_Notations::isRegistered($currentNotation)) {
 	    			// If we do not have the notation registered - register it.

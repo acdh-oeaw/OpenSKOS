@@ -79,23 +79,6 @@ class Api_ConceptController extends Api_FindConceptsController {
 		if (null !== $concept) {
 			$solrDocument->offsetUnset('uuid');
 			$solrDocument->offsetSet('uuid', $concept['uuid']);
-			
-			// Preserve any old data which is not part of the rdf.
-			if (isset($concept['created_by'])) {
-				$solrDocument->offsetSet('created_by', $concept['created_by']);
-			}
-			if (isset($concept['modified_by'])) {
-				$solrDocument->offsetSet('modified_by', $concept['modified_by']);
-			}
-			if (isset($concept['approved_by'])) {
-				$solrDocument->offsetSet('approved_by', $concept['approved_by']);
-			}
-			if (isset($concept['deleted_by'])) {
-				$solrDocument->offsetSet('deleted_by', $concept['deleted_by']);
-			}
-			if (isset($concept['toBeChecked'])) {
-				$solrDocument->offsetSet('toBeChecked', $concept['toBeChecked']);
-			}
 		}
                 
 		if($this->getRequest()->getActionName() == 'put') {

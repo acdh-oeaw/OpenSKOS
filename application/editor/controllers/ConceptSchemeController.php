@@ -40,8 +40,6 @@ class Editor_ConceptSchemeController extends OpenSKOS_Controller_Editor
 		$this->view->uploadedIcons = $this->_getUploadedIcons();		
 		$this->view->conceptSchemes = Editor_Models_ApiClient::factory()->getConceptSchemes();
 		
-		$this->view->conceptSchemesWithDeleteJobs = $this->_getConceptSchemesWithDeleteJob();
-		
 		$user = OpenSKOS_Db_Table_Users::fromIdentity();
 		$modelCollections = new OpenSKOS_Db_Table_Collections();
 		$this->view->collectionsMap = $modelCollections->getIdToTitleMap($user->tenant);
@@ -111,9 +109,10 @@ class Editor_ConceptSchemeController extends OpenSKOS_Controller_Editor
 				$this->_requireAccess('editor.concept-schemes', 'edit', self::RESPONSE_TYPE_PARTIAL_HTML);
 			}
 			
+			$extraData = array();			
 			$oldData = $conceptScheme->getData();
 			$extraData = $conceptScheme->transformFormData($formData);
-			$conceptScheme->setConceptData($formData, $extraData);
+			$conceptScheme->setConceptData($formData);
 			
 			try {
 				$user = OpenSKOS_Db_Table_Users::fromIdentity();
@@ -156,21 +155,16 @@ class Editor_ConceptSchemeController extends OpenSKOS_Controller_Editor
 		$user = $this->getCurrentUser();
 		$conceptScheme = $this->_getConceptScheme();
 		
-		$getConceptSchemesWithDeleteJob = $this->_getConceptSchemesWithDeleteJob();
-		if (! isset($getConceptSchemesWithDeleteJob[$conceptScheme['uuid']])) {
-			$model = new OpenSKOS_Db_Table_Jobs();
-			$job = $model->fetchNew()->setFromArray(array(
-					'collection' => $conceptScheme['collection'],
-					'user' => $user->id,
-					'task' => OpenSKOS_Db_Table_Row_Job::JOB_TASK_DELETE_CONCEPT_SCHEME,
-					'parameters' => serialize(array('uuid' => $conceptScheme['uuid'])),
-					'created' => new Zend_Db_Expr('NOW()')
-			))->save();
-			
-			$this->getHelper('FlashMessenger')->addMessage(_('A job for deleting the concept scheme was added.'));
-		} else {			
-			$this->getHelper('FlashMessenger')->addMessage(_('A job for deleting the concept scheme already exists.'));
-		}
+		$model = new OpenSKOS_Db_Table_Jobs();
+		$job = $model->fetchNew()->setFromArray(array(
+				'collection' => $conceptScheme['collection'],
+				'user' => $user->id,
+				'task' => OpenSKOS_Db_Table_Row_Job::JOB_TASK_DELETE_CONCEPT_SCHEME,
+				'parameters' => serialize(array('uuid' => $conceptScheme['uuid'])),
+				'created' => new Zend_Db_Expr('NOW()')
+		))->save();
+		
+		$this->getHelper('FlashMessenger')->addMessage(_('A job for deleting the concept scheme was added.'));
 		$this->_helper->redirector('index');
 	}
 	
@@ -296,15 +290,6 @@ class Editor_ConceptSchemeController extends OpenSKOS_Controller_Editor
 		$this->getHelper('json')->sendJson(array('status' => 'ok'));
 	}
 	
-	public function getConceptsBaseUrlAction()
-	{
-		$conceptScheme = $this->_getConceptScheme();
-		
-		$conceptsBaseUrl = $conceptScheme->getCollection()->getConceptsBaseUri();
-	
-		$this->getHelper('json')->sendJson(array('status' => 'ok', 'result' => $conceptsBaseUrl));
-	}
-	
 	/**
 	 * Get an array of the uploaded icons paths.
 	 * 
@@ -358,11 +343,11 @@ class Editor_ConceptSchemeController extends OpenSKOS_Controller_Editor
 		}
 	
 		if ( ! is_dir($iconsUploadPath)) {
-			mkdir($iconsUploadPath, '0777', true);
+			mkdir($iconsUploadPath);
 		}
 	
 		if ( ! is_dir($iconsAssignPath)) {
-			mkdir($iconsAssignPath, '0777', true);
+			mkdir($iconsAssignPath);
 		}
 	}
 	
@@ -383,30 +368,4 @@ class Editor_ConceptSchemeController extends OpenSKOS_Controller_Editor
 			
 		return new Editor_Models_ConceptScheme(new Api_Models_Concept(array_shift($response['response']['docs'])));
 	}
-	
-	/**
-	 * Gets an array map for all concept schemes which has a delet job started (and not completed yet) for them.
-	 * @return array array(conceptSchemeUuid => deleteJobUuid)
-	 */
-	protected function _getConceptSchemesWithDeleteJob()
-	{
-		$model = new OpenSKOS_Db_Table_Jobs();
-		$conceptDeleteJobs = $model->fetchAll(
-			$model->select()
-				->where('task = ?', OpenSKOS_Db_Table_Row_Job::JOB_TASK_DELETE_CONCEPT_SCHEME)
-				->where('status IS NULL')
-				->where('finished IS NULL')
-		);
-		
-		$conceptSchemesDeleteJobsMap = array();
-		foreach ($conceptDeleteJobs as $conceptDeleteJob) {
-			$params = $conceptDeleteJob->getParams();
-			if (! isset($conceptSchemesDeleteJobsMap[$params['uuid']])) {
-				$conceptSchemesDeleteJobsMap[$params['uuid']] = $conceptDeleteJob->id;
-			}
-		}
-		
-		return $conceptSchemesDeleteJobsMap;
-	}
-	
 }

@@ -48,9 +48,9 @@ class Editor_Models_ApiClient
 	 * 
 	 * @return array An array with the labels of the schemes
 	 */
-	public function getAllConceptSchemeUriTitlesMap($tenant = null, $inCollections = array()) 
+	public function getAllConceptSchemeUriTitlesMap($tenant = null) 
 	{
-		return $this->getConceptSchemeMap('uri', array('dcterms_title' => 0), null, $tenant, $inCollections);
+		return $this->getConceptSchemeMap('uri', array('dcterms_title' => 0), null, $tenant);
 	}
 	
 	/**
@@ -60,9 +60,9 @@ class Editor_Models_ApiClient
 	 * @param string $value
 	 * @return array
 	 */
-	public function getConceptSchemeMap($field, $value, $uris = null, $tenant = null, $inCollections = array())
+	public function getConceptSchemeMap($field, $value, $uris = null, $tenant = null)
 	{
-		$conceptSchemes = $this->getConceptSchemes($uris, $tenant, $inCollections);
+		$conceptSchemes = $this->getConceptSchemes($uris, $tenant);
 		
 		$result = array();
 		foreach ($conceptSchemes as $scheme) {
@@ -87,9 +87,9 @@ class Editor_Models_ApiClient
 	 * @param string $uri, optional If specified - selects the specified concept scheme
 	 * @return array
 	 */
-	public function getConceptSchemeUriMap($uris = null, $tenant = null, $inCollections = array())
+	public function getConceptSchemeUriMap($uris = null, $tenant = null)
 	{
-		$conceptSchemes = $this->getConceptSchemes($uris, $tenant, $inCollections);
+		$conceptSchemes = $this->getConceptSchemes($uris, $tenant);
 		$result = array();
 		foreach ($conceptSchemes as $scheme) {
 			if (isset($scheme['uri'])) {
@@ -107,14 +107,10 @@ class Editor_Models_ApiClient
 	 * @param string $tenant, optional If specified concept schemes for this tenant will be returned. If not - concept schemes for current tenant.
 	 * @return array An array of concept scheme documents data, or the single concept scheme data if uri is specified.
 	 */
-	public function getConceptSchemes($uri = null, $tenant = null, $inCollections = array())
+	public function getConceptSchemes($uri = null, $tenant = null)
 	{
 		if (null === $tenant) {
 			$tenant = $this->_getCurrentTenant()->code;
-		}
-		
-		if (null === $inCollections) {
-			$inCollections = array();
 		}
 		
 		$conceptSchemes = OpenSKOS_Cache::getCache()->load(self::CONCEPT_SCHEMES_CACHE_KEY);
@@ -122,31 +118,20 @@ class Editor_Models_ApiClient
 			$conceptSchemes = array();
 		}
 		
-		$schemesCacheKey = $tenant . implode('', $inCollections);
-		
-		if (! isset($conceptSchemes[$schemesCacheKey])) {
+		if ( ! isset($conceptSchemes[$tenant])) {
 			$query = 'class:ConceptScheme tenant:' . $tenant;
-			
-			if (! empty($inCollections)) {
-				if (count($inCollections) == 1) {
-					$query .= sprintf(' collection:%s', $inCollections[0]);
-				} else {
-					$query .= sprintf(' collection:(%s)', implode(' OR ', $inCollections));
-				}
-			}
-			
 			$response = Api_Models_Concepts::factory()->setQueryParams(array('rows' => self::DEFAULT_MAX_ROWS_LIMIT))->getConcepts($query);
 			$response = $response['response'];
 			
-			$conceptSchemes[$schemesCacheKey] = array();
+			$conceptSchemes[$tenant] = array();
 			if ($response['numFound'] > 0) {
 				foreach ($response['docs'] as $doc) {
 					$doc['iconPath'] = Editor_Models_ConceptScheme::buildIconPath($doc['uuid'], $this->_tenant);
-					$conceptSchemes[$schemesCacheKey][] = $doc;
+					$conceptSchemes[$tenant][] = $doc;
 				}
 			}
 			
-			usort($conceptSchemes[$schemesCacheKey], array('Editor_Models_ConceptScheme', 'compareDocs'));
+			usort($conceptSchemes[$tenant], array('Editor_Models_ConceptScheme', 'compareDocs'));
 			
 			OpenSKOS_Cache::getCache()->save($conceptSchemes, self::CONCEPT_SCHEMES_CACHE_KEY);
 		}
@@ -156,7 +141,7 @@ class Editor_Models_ApiClient
 				$uri = array($uri);
 			}
 			$schemes = array();
-			foreach ($conceptSchemes[$schemesCacheKey] as $schemeLine) {
+			foreach ($conceptSchemes[$tenant] as $schemeLine) {
 				if (isset($schemeLine['uri']) && in_array($schemeLine['uri'], $uri)) {
 					$schemes[$schemeLine['uri']] = $schemeLine;
 				}
@@ -164,7 +149,7 @@ class Editor_Models_ApiClient
 			return $schemes;
 		}
 		
-		return $conceptSchemes[$schemesCacheKey];
+		return $conceptSchemes[$tenant];
 	}
 	
 	/**

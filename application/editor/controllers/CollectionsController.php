@@ -110,7 +110,7 @@ class Editor_CollectionsController extends OpenSKOS_Controller_Editor
 			$path = Zend_Controller_Front::getInstance()->getParam('bootstrap')->getOption('upload_path');
 			$tenant_path = $path .'/'.$collection->tenant;
 			if (!is_dir($tenant_path)) {
-				if (!@mkdir($tenant_path, 0777, true)) {
+				if (!@mkdir($tenant_path)) {
 					$this->getHelper('FlashMessenger')->setNamespace('error')->addMessage(_('Failed to create upload folder'));
 					$this->_helper->redirector('edit', null, null, array('collection' => $collection->code));
 					return;
@@ -142,8 +142,7 @@ class Editor_CollectionsController extends OpenSKOS_Controller_Editor
  				'ignoreIncomingStatus' => (int)$formData['ignoreIncomingStatus'] == 1,
  				'lang' => $formData['lang'],
  				'toBeChecked' => (int)$formData['toBeChecked'] == 1,
-	 			'purge' => (int)$formData['purge'] == 1,
-	 			'onlyNewConcepts' => (int)$formData['onlyNewConcepts'] == 1
+	 			'purge' => (int)$formData['purge'] == 1
 	 		);
 	 		$job = $model->fetchNew()->setFromArray(array(
 	 			'collection' => $collection->id,
@@ -195,16 +194,6 @@ class Editor_CollectionsController extends OpenSKOS_Controller_Editor
 			$this->getHelper('FlashMessenger')->addMessage('Data saved');
 			$this->_helper->redirector('index');
 		}
-	}
-	
-	public function getConceptsBaseUrlAction()
-	{
-		$model = new OpenSKOS_Db_Table_Collections();
-		$collection = $model->find($this->getRequest()->getParam('id'))->current();
-		
-		$conceptsBaseUrl = $collection->getConceptsBaseUri();
-		
-		$this->getHelper('json')->sendJson(array('status' => 'ok', 'result' => $conceptsBaseUrl));
 	}
 	
 	/**
