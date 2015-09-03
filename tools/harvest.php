@@ -72,8 +72,8 @@ if (null !== $OPTS->collection) {
 	        fwrite(STDERR, "collection `{$OPTS->collection}` has no OAI base URL\n");
 	        exit(3);
         }
-        $collections = array($collection);
     }
+    $collections = array($collection);
 } else {
     $collections = $model->fetchAll($model->select()->where('OAI_baseURL<>?', ''));
 }
