@@ -56,10 +56,6 @@ $lang = (string)Zend_Registry::get('Zend_Locale');
 
 	<body>
 		<header>
-			<h1>
-				<img src="<?php echo $baseUrl?>assets/images/logo-open-skos.png" alt="OpenSKOS logo"/>
-				<span>OpenSKOS: Simple Knowledge Organization System Repository</span>
-			</h1>
 			<?php if (Zend_Auth::getInstance()->hasIdentity()):
 				$identity = Zend_Auth::getInstance()->getIdentity();
 			?>
@@ -74,6 +70,15 @@ $lang = (string)Zend_Registry::get('Zend_Locale');
 				<?php endif?>
 			</div>
 			<?php endif?>
+			<h1>
+				<img src="<?php echo $baseUrl?>assets/images/logo-open-skos.png" alt="OpenSKOS logo"/>
+				<span>ACDH vocabularies</span>
+			</h1>
+			<ul>
+				<li><a href="/vocabs/editor">Editor</a></li>
+				<li><a href="/vocabs/browser">Browser</a></li>
+				<li><a href="/vocabs/api">API</a></li>
+			</ul>
 	    </header>
 	    <section id="content">
    		<?php echo $this->render('flashmessenger.phtml')?>
