@@ -484,7 +484,8 @@ class Editor_ConceptController extends OpenSKOS_Controller_Editor
 				$user = $this->_getUser($concept[$field.'_by']);
 			}
 			if (isset($concept[$field.'_timestamp'])) {
-				$serverTimeZone = new DateTimeZone(ini_get('date.timezone'));
+				$serverTimeZone = new DateTimeZone('Europe/Vienna');
+				#$serverTimeZone = new DateTimeZone(ini_get('date.timezone'));
 				$date = new DateTime($concept[$field.'_timestamp']);
 				$date->setTimezone($serverTimeZone);
 				$date = $date->format('d-m-Y H:i:s');

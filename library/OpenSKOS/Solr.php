@@ -118,14 +118,15 @@ class OpenSKOS_Solr
 		);
 		$params = array_merge($params, $extraParams);
 		$params['q'] = $q;
-		
+		// workarounds for SOLR compatibility
+		$params['fl'] = str_replace(', prefLabel@pl', '', $params['fl']);
+	
 		$response = $this->_getClient()
 			->setUri($this->getUri('select'))
 			->setParameterPost($params)
 			->request('POST');
-				
-		if ($response->isError()) {
 			
+		if ($response->isError()) {
 			if ($response->getStatus() != 400) {
 				$doc = new DOMDocument();
 				$doc->loadHtml($response->getBody());
@@ -158,10 +159,14 @@ class OpenSKOS_Solr
 					}
 				} 
 			}
-			
 		} else {
 			$result = unserialize($response->getBody());
 		}
+#echo("\n---------------------\n");
+#print_r($response->getBody());
+#echo("\n---------------------\n");
+#print_r($result);
+#echo("#####################\n");
 		return $result;
 	}
 	

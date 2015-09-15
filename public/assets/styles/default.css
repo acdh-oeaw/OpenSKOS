@@ -260,3 +260,39 @@ div.message {
 .job-status-success {
   color: Green;
 }
+
+/* ACDH */
+#content {
+  padding-top: 120px;
+}
+header {
+  position: fixed;
+  width: 100%;
+  left: 0px;
+  top: 0px;
+  padding: 5px;
+  background-color: #F8F8F8;
+  border-bottom: 1px solid #3C1038;
+}
+header h1 {
+  margin-bottom: 0;
+  border-bottom-style: none;
+}
+header ul {
+  padding-left: 0;
+  margin-bottom: 0;
+}
+header ul a {
+  padding: 5px;
+  display: block;
+}
+header ul a:hover {
+  text-decoration: none;
+}
+header ul li {
+  display: inline-block;
+  border: solid 1px;
+}
+header ul li:hover {
+  background-color: #FFFFFF;
+}

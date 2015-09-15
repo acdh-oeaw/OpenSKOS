@@ -253,11 +253,13 @@ class Api_Models_Concepts
 	 */
 	public function getConcept($id, $includeDeleted = false)
 	{
-		$data = $this->solr()->get($id, array(
-			'wt' => $this->format === 'xml' ? 'xml' : 'phps',
-			'fl' => $this->getQueryParam('fl', '*')
-			),
-    		$includeDeleted
+		$data = $this->solr()->get(
+			$id, 
+			array(
+				'wt' => $this->format === 'xml' ? 'xml' : 'phps',
+				'fl' => $this->getQueryParam('fl', '*')
+				),
+    			$includeDeleted
 		);
 		
 		if (null === $data) {

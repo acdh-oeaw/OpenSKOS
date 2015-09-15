@@ -81,6 +81,7 @@ switch ($action) {
 		$model = new OpenSKOS_Db_Table_Users();
 		$model->createRow(array(
 			'email' => $OPTS->email,
+			'eppn' => $OPTS->email,
 			'name' => $OPTS->name,
 			'password' => new Zend_Db_Expr('MD5('.$model->getAdapter()->quote($password).')'),
 			'tenant' => $OPTS->code,
