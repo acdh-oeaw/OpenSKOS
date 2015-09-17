@@ -218,8 +218,9 @@ list($list,$total, $facetFieldCounts, $facetQueryCounts) = getList($start,$numbe
 <div id="wrap">
   <div id="header">
    <img id="logo" name="logo" alt="CLARIN" src="img/bg.png">
-   <h1>CLARIN</h1>
-   <h2>Concept Registry Browser</h2>
+   <a href="/vocabs/">
+     <h1>ACDH Vocabularies Browser</h1>
+   </a>
   </div>
   <?php if($debug) {?><div><h3>Debug-modus</h3>
     <ul>
