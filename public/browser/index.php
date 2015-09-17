@@ -189,7 +189,7 @@ list($list,$total, $facetFieldCounts, $facetQueryCounts) = getList($start,$numbe
 
 ?><html><head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-  <title>Concept Registry Browser</title>
+  <title>ACDH Vocabularies Browser</title>
   <link href="css/skos.css" rel="stylesheet" type="text/css" />
   <script src="../scripts/jquery-1.11.1.min.js"></script>
   <meta name="author" content="Martin Snijders & Rob Zeeman">
@@ -232,6 +232,7 @@ list($list,$total, $facetFieldCounts, $facetQueryCounts) = getList($start,$numbe
     </ul>
   </div><?php } ?>
   <form id="formulier" action="" method="GET">
+    <p>This is the browser view of the <a href="https://clarin.oeaw.ac.at/vocabs">vocabulary service</a> based on the software <a href="http://openskos.org">OpenSKOS</a> run by <a href="http://www.oeaw.ac.at/acdh">ACDH-OEAW</a> as a service for the research community in the context of research infrastructures <a href="http://clarin.eu" >CLARIN-ERIC</a> and <a href="http://dariah.eu">DARIAH-EU</a>.</p>
     <p>
       <strong>Please type one or more space separated search terms</strong>
     </p>
