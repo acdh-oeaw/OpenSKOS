@@ -674,7 +674,7 @@ function getList($start=0, $num=10, $config, $solrUrl) {
   $filterQueryLucenePrefix = buildLuceneFilterQueryString($searchFields, $searchValues, $orTerms, $exactTermMatching);
   $queryLucenePrefix = buildLuceneFilterQueryString($searchFields, $searchValues, "OR", false);
   $query = "fq={!tag=" . $queryFiltersTagName ."}" . $filterQueryLucenePrefix . $queryPostfix;
-  $query.= "&q=(" . $queryLucenePrefix . ") OR (*:*)";    
+  $query.= "&q=((" . $queryLucenePrefix . ") OR (*:*)) AND deleted:false";
 
   /* Facet Queries :  */  
   $activeFacetFilterMapString = "";
@@ -833,7 +833,7 @@ function compareListItems($a, $b) {
 }
 
 function getConceptSchemes($solr_baseurl) {
-	$query = "q=class:ConceptScheme&fl=dcterms_title,uri,uuid&rows=100000";
+	$query = "q=class:ConceptScheme deleted:false&fl=dcterms_title,uri,uuid&rows=100000";
 	if($response = solrRequest($query, $solr_baseurl)) {
 		if(is_array($response) && isset($response['response']) && is_array($response['response']) && isset($response['response']['docs']) && is_array($response['response']['docs'])) {
 			$list = array();
@@ -851,7 +851,7 @@ function getConceptSchemes($solr_baseurl) {
 }
 
 function getSkosCollections($solr_baseurl) {
-  $query = "q=class:SKOSCollection&fl=dcterms_title,uri,uuid&rows=100000";
+  $query = "q=class:SKOSCollection AND deleted:false&fl=dcterms_title,uri,uuid&rows=100000";
   if($response = solrRequest($query, $solr_baseurl)) {
     if(is_array($response) && isset($response['response']) && is_array($response['response']) && isset($response['response']['docs']) && is_array($response['response']['docs'])) {
       $list = array();
@@ -869,7 +869,7 @@ function getSkosCollections($solr_baseurl) {
 }
 
 function getTopConceptsConceptScheme($schemeUri, $solr_baseurl) {
-	$query = "q=inScheme:".urlencode(solrEscape($schemeUri))."&fl=uri,prefLabel&rows=100000";
+	$query = "q=inScheme:".urlencode(solrEscape($schemeUri))." AND deleted:false&fl=uri,prefLabel&rows=100000";
   if($response = solrRequest($query, $solr_baseurl)) {
 		if(is_array($response) && isset($response['response']) && is_array($response['response']) && isset($response['response']['docs']) && is_array($response['response']['docs'])) {
 			return $response['response']['docs'];
@@ -879,7 +879,7 @@ function getTopConceptsConceptScheme($schemeUri, $solr_baseurl) {
 }
 
 function getTopConceptsSkosCollection($schemeUri, $solr_baseurl) {
-	$query = "q=inSkosCollection:".urlencode(solrEscape($schemeUri))."&fl=uri,prefLabel&rows=100000";
+	$query = "q=inSkosCollection:".urlencode(solrEscape($schemeUri))." AND deleted:false&fl=uri,prefLabel&rows=100000";
 	if($response = solrRequest($query, $solr_baseurl)) {
 		if(is_array($response) && isset($response['response']) && is_array($response['response']) && isset($response['response']['docs']) && is_array($response['response']['docs'])) {
 			return $response['response']['docs'];
