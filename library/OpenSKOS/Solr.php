@@ -119,7 +119,7 @@ class OpenSKOS_Solr
 		$params = array_merge($params, $extraParams);
 		$params['q'] = $q;
 		// workarounds for SOLR compatibility
-		$params['fl'] = str_replace(', prefLabel@pl', '', $params['fl']);
+		$params['fl'] = preg_replace('/, prefLabel@[a-z]+/', '', $params['fl']);
 	
 		$response = $this->_getClient()
 			->setUri($this->getUri('select'))
