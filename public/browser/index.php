@@ -817,7 +817,7 @@ function printValue($field,$value) {
     		}
     	}
     }     
-    if($value && in_array($field, array("uri","inScheme","inSkosCollection","hasTopConcept","topConceptOf"))) { // uitbreiden als er meer verwijs velden bij komen..
+    if($value && in_array($field, array("uri","inScheme","inSkosCollection","hasTopConcept","topConceptOf","SemanticRelations","narrower",))) { // uitbreiden als er meer verwijs velden bij komen..
       return "<a href=\"".$_SERVER["PHP_SELF"]."?id=".urlencode($value)."\">".htmlEscape($translated_value)."</a>";
     } else {
       return(htmlEscape($value));
