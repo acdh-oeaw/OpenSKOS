@@ -742,8 +742,8 @@ function buildLuceneQueryString($fieldsTermsMap, $isOrSearch, $exactWordMatching
 }
 
 function printValue($field,$value) {
-	if(is_string($value)) {
-  	if($value && in_array($field, array("uri","inScheme","inSkosCollection","hasTopConcept","topConceptOf"))) { // uitbreiden als er meer verwijs velden bij komen..
+  if(is_string($value)) {
+    if($value && in_array($field, array("uri","inScheme","inSkosCollection","hasTopConcept","topConceptOf"))) { // uitbreiden als er meer verwijs velden bij komen..
       return "<a href=\""."http://".$_SERVER["HTTP_HOST"]."/api/concept?id=".$value."\">".htmlentities("".$value."")."</a>";
     } else {
       return(htmlentities($value, ENT_COMPAT, "UTF-8")); // | ENT_HTML401, "UTF-8"));
