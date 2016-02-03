@@ -69,5 +69,10 @@ class Api_AutocompleteController extends OpenSKOS_Rest_Controller {
 		$this->_501('DELETE');
 	}
 
+        public function headAction() {
+                $this->_501('HEAD');
+        }
+
+
 }
 
