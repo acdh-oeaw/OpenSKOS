@@ -19,7 +19,7 @@
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  */
 
-class Api_ConceptSchemaController extends OpenSKOS_Rest_Controller {
+class Api_ConceptSchemeController extends OpenSKOS_Rest_Controller {
 	public function init()
 	{
 		parent::init();
@@ -36,12 +36,13 @@ class Api_ConceptSchemaController extends OpenSKOS_Rest_Controller {
 
 	public function getAction() {
 		$this->view->conceptSchema = new DOMDocument;
-		$apiBase = preg_replace('#/concept-schema(/[^/]*)?$#', '', $_SERVER['SCRIPT_URI']);
+		$apiBase = preg_replace('#/concept-scheme(/[^/]*)?$#', '', $_SERVER['SCRIPT_URI']);
 		$id = $this->getRequest()->getParam('id');
 		if($id == ''){
 			throw new Zend_Controller_Exception('Missing required parameter `id`', 400);
 		}
 
+		// SKOS Concept Scheme
 		$conceptSchemaURL = sprintf('%s/concept?id=%s', $apiBase, urlencode($id));
 		$conceptSchemaRDF = @file_get_contents($conceptSchemaURL);
 		if($conceptSchemaRDF == ''){
@@ -53,12 +54,32 @@ class Api_ConceptSchemaController extends OpenSKOS_Rest_Controller {
 		$conceptsRDF = @file_get_contents($conceptsURL);
 		$concepts = new DOMDocument();
 		$concepts->loadXml($conceptsRDF);
+
 		$xpath = new DOMXPath($concepts);
 		$xpath->registerNamespace('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#');
-		foreach($xpath->query('//rdf:Description') as $node){
-			$node = $this->view->conceptSchema->importNode($node, true);
-			$this->view->conceptSchema->documentElement->appendChild($node);
+		$xpath->registerNamespace('skos', 'http://www.w3.org/2004/02/skos/core#');
+
+		// SKOS collections
+		$collections = array();
+		foreach($xpath->query('//skos:inSkosCollection') as $collNode){
+			$coll = $collNode->getAttributeNS('http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'resource');
+			if($coll != ''){
+				$collections[$coll] = '';
+			}
 		}
+		foreach(array_keys($collections) as $collId){
+			$collURL = sprintf('%s/open-skos-collection?id=%s', $apiBase, urlencode($collId));
+			$collRDF = file_get_contents($collURL);
+			$coll = new DOMDocument();
+			$coll->loadXml($collRDF);
+			
+			$collXPath = new DOMXPath($coll);
+			$collXPath->registerNamespace('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#');
+			$this->appendNodes($this->view->conceptSchema->documentElement, $collXPath->query('rdf:Description'));
+		}
+
+		// SKOS concepts
+		$this->appendNodes($this->view->conceptSchema->documentElement, $xpath->query('//rdf:Description'));
 	}
 
 	public function postAction() {
@@ -71,6 +92,13 @@ class Api_ConceptSchemaController extends OpenSKOS_Rest_Controller {
 
 	public function deleteAction() {
 		$this->_501('DELETE');
+	}
+
+	private function appendNodes(DOMElement $target, DOMNodeList $nodes){
+		foreach($nodes as $node){
+			$node = $target->ownerDocument->importNode($node, true);
+			$target->appendChild($node);
+		}
 	}
 
 	/*

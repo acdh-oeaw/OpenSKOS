@@ -77,7 +77,7 @@ class Api_Models_OpenSkosCollection extends Api_Models_Concepts {
 			}
 			return $labels;
 		}
-	
+
 		return $solr->search($q, $params);
 	}
 	

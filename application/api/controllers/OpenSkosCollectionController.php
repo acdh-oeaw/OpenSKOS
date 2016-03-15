@@ -12,8 +12,8 @@ class Api_OpenSkosCollectionController extends OpenSKOS_Rest_Controller {
 		$this->model = Api_Models_OpenSkosCollection::factory()->setQueryParams(
 				$this->getRequest()->getParams()
 		);
-		$this->_helper->contextSwitch()
-		->initContext($this->getRequest()->getParam('format', 'rdf'));
+		$this->_helper->contextSwitch()->
+			initContext($this->getRequest()->getParam('format', 'rdf'));
 	
 		if('html' == $this->_helper->contextSwitch()->getCurrentContext()) {
 			//enable layout:
@@ -64,11 +64,11 @@ class Api_OpenSkosCollectionController extends OpenSKOS_Rest_Controller {
 		
 		// first see if the id is meant as a URI
 		// try and get all concepts that have $id as the inSkosCollection field..
-		$concepts = $this->model->getConcepts("inSkosCollection:" . "\"" . $id . "\""); // self::solrEscape($id));
+		$concepts = $this->model->getConcepts("inSkosCollection:" . "\"" . self::solrEscape($id) . "\"");
 		if (count($concepts["response"]["docs"]) == 0) { // nothing found, try and see if id was meant as the UUID of the SkosCollection
 			$skosCollection = $this->model->getConcepts("uuid:" . "\"" . $id . "\"");
 			if (count($skosCollection["response"]["docs"]) > 0) { // should be 1 only if found..
-				$concepts = $this->model->getConcepts("inSkosCollection:" . "\"" . $genericHandleUrlPart . $id . "\""); // self::solrEscape($id));
+				$concepts = $this->model->getConcepts("inSkosCollection:" . "\"" . $genericHandleUrlPart . self::solrEscape($id) . "\"");
 			}
 			else {
 				// sorry, no such SkosCollection found...
@@ -106,7 +106,7 @@ class Api_OpenSkosCollectionController extends OpenSKOS_Rest_Controller {
 		}
 		//$concepts = $this->model->getConcepts("uuid:". self::solrEscape($id) . " AND class:SKOSCollection");
 		//$concepts = $this->model->getConcepts("uuid:". $id . " AND class:SKOSCollection");
-		$concepts = $this->model->getConcepts("uri:". $id . " AND class:SKOSCollection");
+		$concepts = $this->model->getConcepts("uri:". self::solrEscape($id) . " AND class:SKOSCollection");
 		
 		
 		//echo(count($concepts));
